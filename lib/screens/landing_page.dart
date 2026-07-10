@@ -170,9 +170,7 @@ Widget build(BuildContext context) {
                         ),
                         child: CircleAvatar(
                           radius: width < 600 ? 55 : 70,
-                          backgroundImage: const NetworkImage(
-                            "https://scontent.fmnl7-1.fna.fbcdn.net/v/t39.30808-6/531819041_1238315274973150_920925310850444405_n.jpg?stp=dst-jpg_tt6&cstp=mx960x958&ctp=s960x958&_nc_cat=108&ccb=1-7&_nc_sid=a5f93a",
-                          ),
+                          backgroundImage: const NetworkImage(kAvatarUrl),
                         ),
                       ),
                     ),
