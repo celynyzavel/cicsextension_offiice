@@ -181,16 +181,22 @@ class _RecordFormState extends State<RecordForm> {
           borderRadius: BorderRadius.circular(12),
         ),
         title: Row(
-          children: [
-            const Icon(Icons.check_circle, color: kPrimary),
-            const SizedBox(width: 8),
-            Text(
-              '${widget.recordLabel} Saved',
-              style: const TextStyle(color: kWhite),
-            ),
-          ],
-        ),
-        content: Column(
+  children: [
+    const Icon(
+      Icons.check_circle,
+      color: kPrimary,
+    ),
+    const SizedBox(width: 8),
+    Text(
+      "${widget.recordLabel} Saved",
+      style: const TextStyle(
+        color: kWhite,
+      ),
+    ),
+  ],
+),
+
+content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -224,17 +230,80 @@ class _RecordFormState extends State<RecordForm> {
     final f = widget.fields[i];
 
     InputDecoration deco({Widget? suffixIcon}) => InputDecoration(
-          labelText: f.label,
-          labelStyle: const TextStyle(color: kTextSecondary),
-          prefixIcon: Icon(f.icon, color: kPrimary),
-          suffixIcon: suffixIcon,
-          border: InputBorder.none,
-          filled: true,
-          fillColor: kCard,
-        );
+      hintText: "Enter ${f.label}",
+      hintStyle: const TextStyle(
+        color: kTextSecondary,
+      ),
+
+      prefixIcon: Icon(
+        f.icon,
+        color: kPrimary,
+      ),
+
+      suffixIcon: suffixIcon,
+
+      filled: true,
+      fillColor: kBackground,
+
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 18,
+      ),
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(
+          color: kCardBorder,
+        ),
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(
+          color: kPrimary,
+          width: 2,
+        ),
+      ),
+
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(
+          color: Colors.red,
+        ),
+      ),
+
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(
+          color: Colors.red,
+          width: 2,
+        ),
+      ),
+    );
 
     if (f.type == FieldType.dropdown) {
-      return cardBox(
+      return AnimatedContainer(
+  duration: const Duration(milliseconds: 250),
+  margin: const EdgeInsets.only(bottom: 18),
+  decoration: BoxDecoration(
+    color: kCard,
+    borderRadius: BorderRadius.circular(18),
+    border: Border.all(
+      color: kCardBorder,
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(.18),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
+      ),
+    ],
+  ),
         child: DropdownButtonFormField<String>(
           value: _controllers[i].text.isEmpty ? null : _controllers[i].text,
           dropdownColor: kCard,
@@ -287,36 +356,78 @@ class _RecordFormState extends State<RecordForm> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        children: [
-          for (var i = 0; i < widget.fields.length; i++) _buildField(i),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _submit,
-                  icon: const Icon(Icons.check),
-                  label: const Text('Submit'),
-                  style: ElevatedButton.styleFrom(backgroundColor: kPrimary, foregroundColor: kWhite, padding: const EdgeInsets.symmetric(vertical: 15)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _clear,
-                  icon: const Icon(Icons.refresh, color: kWhite),
-                  label: const Text('Clear', style: TextStyle(color: kWhite)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: kPrimary), padding: const EdgeInsets.symmetric(vertical: 15)),
-                ),
-              ),
-            ],
+Widget build(BuildContext context) {
+  return Form(
+    key: _formKey,
+    child: ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Center(
+          child: CircleAvatar(
+            radius: 35,
+            backgroundColor: kPrimary,
+            child: Icon(
+              widget.recordLabel == "Program"
+                  ? Icons.event_note
+                  : widget.recordLabel == "Project"
+                      ? Icons.folder
+                      : Icons.bolt,
+              color: kWhite,
+              size: 35,
+            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+
+        const SizedBox(height: 20),
+
+        Text(
+          "${widget.recordLabel} Information",
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: kGold,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        for (var i = 0; i < widget.fields.length; i++)
+          _buildField(i),
+
+        const SizedBox(height: 30),
+
+        SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: ElevatedButton.icon(
+            onPressed: _submit,
+            icon: const Icon(Icons.save),
+            label: const Text("Save Record"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimary,
+              foregroundColor: kWhite,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 15),
+
+        SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: OutlinedButton.icon(
+            onPressed: _clear,
+            icon: const Icon(Icons.refresh),
+            label: const Text("Clear Form"),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: kWhite,
+              side: const BorderSide(color: kPrimary),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }
