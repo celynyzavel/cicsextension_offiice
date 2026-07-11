@@ -5,6 +5,12 @@ import '../models/form_fields.dart';
 import '../models/records.dart';
 import '../widgets/view_records.dart';
 
+// ============================================================
+// TECHNOLOGY TRANSFER PAGE — mirrors the flow of RecordsFormPage:
+// first shows a selection screen with a single "Add Technology
+// Transfer" option, then reveals the form itself.
+// ============================================================
+
 class TechnologyTransferPage extends StatefulWidget {
   const TechnologyTransferPage({super.key});
 
@@ -14,36 +20,6 @@ class TechnologyTransferPage extends StatefulWidget {
 
 class _TechnologyTransferPageState extends State<TechnologyTransferPage> {
   bool _showForm = false;
-
-  Widget _selectionBox(String title, String subtitle, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: cardBox(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            children: [
-              CircleAvatar(radius: 26, backgroundColor: kBackground, child: Icon(icon, color: kGold, size: 26)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: kWhite)),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: const TextStyle(fontSize: 13, color: kTextSecondary)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: kPrimary),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,22 +35,84 @@ class _TechnologyTransferPageState extends State<TechnologyTransferPage> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: _showForm
-            ? const TechnologyTransferForm()
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _selectionBox(
-                    'Add Technology Transfer',
-                    'Record a new technology transfer entry',
-                    Icons.sync_alt_outlined,
-                    () => setState(() => _showForm = true),
-                  ),
-                ],
+    ? const TechnologyTransferForm()
+    : SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+
+            const Text(
+              'What would you like to add?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: kWhite,
               ),
+            ),
+
+            const SizedBox(height: 35),
+
+Center(
+  child: SizedBox(
+    width: 220,
+    height: 180,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(15),
+      onTap: () => setState(() => _showForm = true),
+      child: Container(
+        decoration: BoxDecoration(
+          color: kCard,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: kCardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.sync_alt_outlined,
+                color: kGold,
+                size: 40,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Add Technology Transfer',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: kWhite,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    ),
+  ),
+),
+          ],
+        ),
+      )
+      )
     );
   }
 }
+
+// ============================================================
+// TECHNOLOGY TRANSFER FORM — the actual data entry form: System
+// Name, Major/Programs, Deployment Date, Usage Status, Type,
+// Partner Institution, Users Trained, Description/Notes.
+// ============================================================
 
 class TechnologyTransferForm extends StatefulWidget {
   const TechnologyTransferForm({super.key});
@@ -157,6 +195,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
   }
 
   void _submit() {
+    // Trigger field-level "Empty Fields" messages first.
     final formValid = _formKey.currentState?.validate() ?? false;
     if (!formValid) {
       _showEmptyFieldsDialog();
@@ -202,6 +241,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
             onPressed: () {
               Navigator.pop(context); // close dialog
               _clear();
+              // Automatically show the newly saved record in View Records.
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => const ViewRecordsPage()),
