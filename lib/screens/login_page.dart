@@ -8,115 +8,276 @@ const kAvatarUrl =
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+
   final _email = TextEditingController();
   final _password = TextEditingController();
+
   bool _obscure = true;
   bool _loading = false;
 
-  final _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+  final _emailRegex = RegExp(
+    r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$',
+  );
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _loading = true);
+
     await Future.delayed(const Duration(milliseconds: 700));
+
     if (!mounted) return;
+
     setState(() => _loading = false);
-    showSnack(context, 'Login successful!');
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LandingPage()));
+
+    showSnack(context, "Login successful!");
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LandingPage(),
+      ),
+    );
   }
 
-  InputDecoration _fieldDecoration({required String label, required IconData icon, Widget? suffixIcon}) {
+  InputDecoration _fieldDecoration({
+    required String label,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: kTextSecondary),
       prefixIcon: Icon(icon, color: kPrimary),
       suffixIcon: suffixIcon,
-      border: InputBorder.none,
       filled: true,
-      fillColor: kCard,
+      fillColor: kBackground,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: kPrimary,
+          width: 2,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: kBackground,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircleAvatar(
-                    radius: 55,
-                    backgroundImage: NetworkImage(kAvatarUrl),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('CICS Extension Projects and Technology Transfer',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: kWhite)),
-                  const SizedBox(height: 6),
-                  const Text('Sign in to continue',
-                      textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: kTextSecondary)),
-                  const SizedBox(height: 32),
-                  cardBox(
-                    child: TextFormField(
-                      controller: _email,
-                      style: const TextStyle(color: kWhite),
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: _fieldDecoration(label: 'Email', icon: Icons.email_outlined),
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Email is required'
-                          : (!_emailRegex.hasMatch(v.trim()) ? 'Enter a valid email address' : null),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 450,
                     ),
-                  ),
-                  cardBox(
-                    child: TextFormField(
-                      controller: _password,
-                      obscureText: _obscure,
-                      style: const TextStyle(color: kWhite),
-                      decoration: _fieldDecoration(
-                        label: 'Password',
-                        icon: Icons.lock_outline,
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: kMuted),
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                        ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: width < 600 ? 55 : 70,
+                            backgroundImage:
+                                const NetworkImage(kAvatarUrl),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          const Text(
+                            "CICS Extension Projects and Technology Transfer",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: kWhite,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          const Text(
+                            "Leading Innovations, Transforming Lives, Building the Nation",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: kTextSecondary,
+                              fontSize: 15,
+                            ),
+                          ),
+
+                          const SizedBox(height: 35),
+
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: kCard,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: kCardBorder,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(.25),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  "LOGIN ACCOUNT",
+                                  style: TextStyle(
+                                    color: kWhite,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 25),
+
+                                TextFormField(
+                                  controller: _email,
+                                  keyboardType:
+                                      TextInputType.emailAddress,
+                                  style:
+                                      const TextStyle(color: kWhite),
+                                  decoration: _fieldDecoration(
+                                    label: "Email",
+                                    icon: Icons.email_outlined,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.trim().isEmpty) {
+                                      return "Email is required";
+                                    }
+
+                                    if (!_emailRegex
+                                        .hasMatch(value.trim())) {
+                                      return "Enter a valid email";
+                                    }
+
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 18),
+
+                                TextFormField(
+                                  controller: _password,
+                                  obscureText: _obscure,
+                                  style:
+                                      const TextStyle(color: kWhite),
+                                  decoration: _fieldDecoration(
+                                    label: "Password",
+                                    icon: Icons.lock_outline,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscure
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: kMuted,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscure = !_obscure;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.isEmpty) {
+                                      return "Password is required";
+                                    }
+
+                                    if (value.length < 6) {
+                                      return "Password must be at least 6 characters";
+                                    }
+
+                                    return null;
+                                  },
+                                ),
+
+                                const SizedBox(height: 30),
+
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton(
+                                    onPressed:
+                                        _loading ? null : _login,
+                                    style:
+                                        ElevatedButton.styleFrom(
+                                      backgroundColor: kPrimary,
+                                      foregroundColor: kWhite,
+                                      elevation: 4,
+                                      shape:
+                                          RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: _loading
+                                        ? const SizedBox(
+                                            height: 22,
+                                            width: 22,
+                                            child:
+                                                CircularProgressIndicator(
+                                              color: kWhite,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text(
+                                            "LOG IN",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight:
+                                                  FontWeight.bold,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? 'Password is required'
-                          : (v.length < 6 ? 'Password must be at least 6 characters' : null),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimary,
-                        foregroundColor: kWhite,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: _loading ? null : _login,
-                      child: _loading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: kWhite, strokeWidth: 2))
-                          : const Text('Log In', style: TextStyle(fontSize: 16)),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
