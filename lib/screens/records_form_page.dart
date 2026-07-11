@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import '../widgets/common_widgets.dart';
 import '../models/form_fields.dart';
 import '../widgets/record_form.dart';
 
 class RecordsFormPage extends StatefulWidget {
   const RecordsFormPage({super.key});
+
   @override
   State<RecordsFormPage> createState() => _RecordsFormPageState();
 }
@@ -13,29 +13,51 @@ class RecordsFormPage extends StatefulWidget {
 class _RecordsFormPageState extends State<RecordsFormPage> {
   RecordType? _type;
 
-  Widget _selectionBox(String title, String subtitle, IconData icon, RecordType type) {
+  Widget _selectionCard({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required Color color,
+    required RecordType type,
+  }) {
+    final width = MediaQuery.of(context).size.width;
+
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
       onTap: () => setState(() => _type = type),
-      child: cardBox(
-        margin: const EdgeInsets.only(bottom: 16),
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        decoration: BoxDecoration(
+          color: kCard,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: kCardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircleAvatar(radius: 26, backgroundColor: kBackground, child: Icon(icon, color: kGold, size: 26)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: kWhite)),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: const TextStyle(fontSize: 13, color: kTextSecondary)),
-                  ],
+              Icon(
+                icon,
+                color: color,
+                size: width < 600 ? 32 : 40,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: kWhite,
+                  fontWeight: FontWeight.bold,
+                  fontSize: width < 600 ? 14 : 16,
                 ),
               ),
-              const Icon(Icons.chevron_right, color: kPrimary),
             ],
           ),
         ),
@@ -45,12 +67,15 @@ class _RecordsFormPageState extends State<RecordsFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+
     final title = switch (_type) {
-      null => 'Extension Projects',
+      null => 'Input Records',
       RecordType.program => 'Add Program',
       RecordType.project => 'Add Project',
       RecordType.activity => 'Add Activity',
     };
+
     return Scaffold(
       backgroundColor: kBackground,
       appBar: AppBar(
@@ -58,20 +83,75 @@ class _RecordsFormPageState extends State<RecordsFormPage> {
         centerTitle: true,
         backgroundColor: kSidebar,
         foregroundColor: kWhite,
-        leading: _type != null ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => _type = null)) : null,
+        leading: _type != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _type = null),
+              )
+            : null,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: _type == null
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text('What would you like to add?', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kWhite)),
-                  const SizedBox(height: 16),
-                  _selectionBox('Add Program', 'Register a new extension program', Icons.event_note_outlined, RecordType.program),
-                  _selectionBox('Add Project', 'Record a new extension project activity', Icons.volunteer_activism_outlined, RecordType.project),
-                  _selectionBox('Add Activity', 'Log a standalone activity or one under a project', Icons.bolt_outlined, RecordType.activity),
-                ],
+            ? SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+
+                    const Text(
+                      'What would you like to add?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: kWhite,
+                      ),
+                    ),
+
+                    const SizedBox(height: 35),
+
+                    Center(
+                      child: SizedBox(
+                        width: width > 1000
+                            ? 750
+                            : width > 700
+                                ? 650
+                                : width,
+                        child: GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: width < 600 ? 1 : 3,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: width < 600 ? 3.8 : 1.35,
+                          children: [
+                            _selectionCard(
+                              context: context,
+                              title: "Add Program",
+                              icon: Icons.event_note_outlined,
+                              color: kPrimary,
+                              type: RecordType.program,
+                            ),
+                            _selectionCard(
+                              context: context,
+                              title: "Add Project",
+                              icon: Icons.volunteer_activism_outlined,
+                              color: kGold,
+                              type: RecordType.project,
+                            ),
+                            _selectionCard(
+                              context: context,
+                              title: "Add Activity",
+                              icon: Icons.bolt_outlined,
+                              color: Colors.green,
+                              type: RecordType.activity,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               )
             : RecordForm(
                 key: ValueKey(_type),
