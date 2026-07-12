@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// APP COLORS — every color constant used across the app lives
-// here. If you need to re-theme the app, this is the one file
-// to touch.
-// ============================================================
 
 const kBackground = Color(0xFF0F1F48);
 const kSidebar = Color(0xFF142554);
