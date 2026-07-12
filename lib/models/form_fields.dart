@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ============================================================
-// FORM FIELD DEFINITIONS — describes the shape of each form
-// (Program / Project / Activity) as data, so RecordForm can stay
-// generic and render whichever field list it's given.
-// ============================================================
-
 enum FieldType { text, number, multiline, date, dropdown }
 
 class FieldSpec {
@@ -29,10 +23,7 @@ class FieldSpec {
 
 enum RecordType { program, project, activity }
 
-// ============================================================
-// PROGRAM fields — mirrors "Add Program" / "Edit Program" in the
-// CICS Extension System (top-level umbrella with projects & activities).
-// ============================================================
+
 const programFields = [
   FieldSpec('Program Title', Icons.event_note_outlined),
   FieldSpec('Start Date', Icons.calendar_today_outlined, type: FieldType.date),
@@ -44,12 +35,7 @@ const programFields = [
   FieldSpec('Program Description', Icons.description_outlined, type: FieldType.multiline, maxLines: 3),
 ];
 
-// ============================================================
-// PROJECT fields — mirrors the CICS Extension System's full
-// "Add Project" / "Edit Project" feature set, including standalone
-// projects (optional parent program), budget, funding source,
-// target output, and lead implementer.
-// ============================================================
+
 const projectFields = [
   FieldSpec('Project Title', Icons.volunteer_activism_outlined),
   FieldSpec('Parent Program (leave blank for standalone project)', Icons.folder_open_outlined, optional: true),
@@ -64,12 +50,7 @@ const projectFields = [
   FieldSpec('Description / Remarks', Icons.notes_outlined, type: FieldType.multiline, maxLines: 3, optional: true),
 ];
 
-// ============================================================
-// ACTIVITY fields — mirrors the CICS Extension System's
-// "Add Activity" modal: optional parent project, core details,
-// faculty involvement, and Google Forms-based pre/post-test and
-// satisfaction evaluation.
-// ============================================================
+
 const activityFields = [
   FieldSpec('Parent Project (leave blank for standalone activity)', Icons.folder_open_outlined, optional: true),
   FieldSpec('Activity Title', Icons.bolt_outlined),
@@ -90,17 +71,13 @@ const activityFields = [
   FieldSpec('Actual Satisfaction Rate (%)', Icons.thumb_up_alt_outlined, type: FieldType.number, optional: true),
 ];
 
-// ============================================================
-// TECHNOLOGY TRANSFER fields — mirrors the "Add Technology
-// Transfer" form: what system was transferred, where it was
-// deployed, and how it's being used.
-// ============================================================
+
 const technologyTransferFields = [
   FieldSpec('System Name', Icons.devices_other_outlined),
   FieldSpec('Major/Programs', Icons.school_outlined),
   FieldSpec('Deployment Date', Icons.calendar_today_outlined, type: FieldType.date),
   FieldSpec('Usage Status', Icons.flag_outlined,
-      type: FieldType.dropdown, options: ['Active', 'Inactive', 'Pilot Testing', 'Decommissioned']),
+      type: FieldType.dropdown, options: ['Active', 'Inactive']),
   FieldSpec('Type', Icons.category_outlined,
       type: FieldType.dropdown, options: ['Software', 'Hardware', 'System/Platform', 'Web Application', 'Mobile Application', 'Other']),
   FieldSpec('Partner Institution', Icons.handshake_outlined),
