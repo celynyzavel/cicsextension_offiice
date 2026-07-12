@@ -84,3 +84,4 @@ const technologyTransferFields = [
   FieldSpec('Users Trained', Icons.groups_outlined, type: FieldType.number),
   FieldSpec('Description/Notes', Icons.notes_outlined, type: FieldType.multiline, maxLines: 3),
 ];
+
