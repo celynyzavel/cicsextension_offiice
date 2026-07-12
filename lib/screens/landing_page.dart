@@ -256,15 +256,14 @@ Widget build(BuildContext context) {
                       ),
                       _actionCard(
                         context,
-                        icon: Icons.edit_note,
+                        icon: Icons.sync_alt_outlined,
                         label: "Technology Transfer",
                         color: kPrimary,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  const TechnologyTransferPage(),
+                              builder: (_) => const TechnologyTransferPage(),
                             ),
                           );
                         },
