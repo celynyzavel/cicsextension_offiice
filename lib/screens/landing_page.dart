@@ -29,10 +29,6 @@ class _LandingPageState extends State<LandingPage> {
     showSnack(context, 'Image color changed!');
   }
 
-  // ============================================================
-  // LOGOUT — confirms with the user, then clears the navigation
-  // stack and sends them back to the Login page.
-  // ============================================================
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
