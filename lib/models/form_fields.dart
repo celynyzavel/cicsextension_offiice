@@ -38,7 +38,7 @@ const programFields = [
 
 const projectFields = [
   FieldSpec('Project Title', Icons.volunteer_activism_outlined),
-  FieldSpec('Parent Program (leave blank for standalone project)', Icons.folder_open_outlined, optional: true),
+FieldSpec('Parent Program', Icons.folder_open_outlined, type: FieldType.dropdown,),
   FieldSpec('Start Date', Icons.calendar_today_outlined, type: FieldType.date),
   FieldSpec('End Date', Icons.event_available_outlined, type: FieldType.date),
   FieldSpec('Status', Icons.flag_outlined,
@@ -52,23 +52,19 @@ const projectFields = [
 
 
 const activityFields = [
-  FieldSpec('Parent Project (leave blank for standalone activity)', Icons.folder_open_outlined, optional: true),
-  FieldSpec('Activity Title', Icons.bolt_outlined),
+  FieldSpec('Parent Project', Icons.folder_open_outlined, type: FieldType.dropdown,),
   FieldSpec('Date', Icons.calendar_today_outlined, type: FieldType.date, optional: true),
   FieldSpec('Location', Icons.location_on_outlined, optional: true),
   FieldSpec('Participants', Icons.groups_outlined, type: FieldType.number, optional: true),
   FieldSpec('Status', Icons.flag_outlined,
       type: FieldType.dropdown, options: ['Completed', 'Ongoing', 'Planned']),
   FieldSpec('Faculty Involved (names & roles)', Icons.people_alt_outlined, type: FieldType.multiline, maxLines: 3, optional: true),
-  FieldSpec('Pre-Test Google Form URL', Icons.link_outlined, optional: true),
-  FieldSpec('Post-Test Google Form URL', Icons.link_outlined, optional: true),
   FieldSpec('Avg Pre-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
   FieldSpec('Avg Post-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
   FieldSpec('Number of Pre-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
   FieldSpec('Number of Post-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Evaluation Form URL', Icons.link_outlined, optional: true),
-  FieldSpec('Satisfaction Rate Target (%)', Icons.thumb_up_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Actual Satisfaction Rate (%)', Icons.thumb_up_alt_outlined, type: FieldType.number, optional: true),
+  FieldSpec('Knowledge Gain', Icons.groups_2_outlined, type: FieldType.number, optional: true),
+  FieldSpec('Satisfaction Rate (%)', Icons.thumb_up_alt_outlined, type: FieldType.number, optional: true),
 ];
 
 
