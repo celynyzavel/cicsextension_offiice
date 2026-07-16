@@ -20,6 +20,24 @@ class _RecordFormState extends State<RecordForm> {
           text: f.type == FieldType.dropdown && f.options.isNotEmpty ? f.options.first : ''))
       .toList();
 
+      List<String> _getProgramTitles() {
+  return RecordStorage.programs
+      .map((p) => p.data["Program Title"] as String)
+      .toList();
+}
+
+List<String> _getProjectTitles() {
+  List<String> projects = [];
+
+  for (final program in RecordStorage.programs) {
+    for (final project in program.projects) {
+      projects.add(project.data["Project Title"] as String);
+    }
+  }
+
+  return projects;
+}
+
   Future<void> _pickDate(int index) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -57,7 +75,19 @@ class _RecordFormState extends State<RecordForm> {
   void _clear() {
     for (var i = 0; i < _controllers.length; i++) {
       final f = widget.fields[i];
-      _controllers[i].text = (f.type == FieldType.dropdown && f.options.isNotEmpty) ? f.options.first : '';
+      if (f.type == FieldType.dropdown) {
+  if (f.label == "Parent Program") {
+    final programs = _getProgramTitles();
+    _controllers[i].text = programs.isNotEmpty ? programs.first : "";
+  } else if (f.label == "Parent Project") {
+    final projects = _getProjectTitles();
+    _controllers[i].text = projects.isNotEmpty ? projects.first : "";
+  } else {
+    _controllers[i].text = f.options.isNotEmpty ? f.options.first : "";
+  }
+} else {
+  _controllers[i].clear();
+}
     }
     _formKey.currentState?.reset();
   }
@@ -89,7 +119,7 @@ class _RecordFormState extends State<RecordForm> {
     //============================
     else if (widget.recordLabel == "Project") {
       String parentProgram =
-          record["Parent Program (leave blank for standalone project)"] ?? "";
+          record["Parent Program"] ?? "";
 
       bool found = false;
 
@@ -124,7 +154,7 @@ class _RecordFormState extends State<RecordForm> {
     //============================
     else if (widget.recordLabel == "Activity") {
       String parentProject =
-          record["Parent Project (leave blank for standalone activity)"] ?? "";
+          record["Parent Project"] ?? "";
 
       bool found = false;
 
@@ -223,6 +253,12 @@ class _RecordFormState extends State<RecordForm> {
     );
 
     if (f.type == FieldType.dropdown) {
+      final options =
+    f.label == "Parent Program"
+        ? _getProgramTitles()
+        : f.label == "Parent Project"
+            ? _getProjectTitles()
+            : f.options;
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: DropdownButtonFormField<String>(
@@ -231,9 +267,19 @@ class _RecordFormState extends State<RecordForm> {
           style: const TextStyle(color: kTextPrimary),
           icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
           decoration: deco(),
-          items: f.options
-              .map((o) => DropdownMenuItem(value: o, child: Text(o, style: const TextStyle(color: kTextPrimary))))
-              .toList(),
+          
+
+items: options
+    .map(
+      (o) => DropdownMenuItem(
+        value: o,
+        child: Text(
+          o,
+          style: const TextStyle(color: kTextPrimary),
+        ),
+      ),
+    )
+    .toList(),
           onChanged: (v) => setState(() => _controllers[i].text = v ?? ''),
           validator: (v) {
             if (f.optional) return null;
