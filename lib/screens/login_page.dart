@@ -201,6 +201,33 @@ class _LoginPageState extends State<LoginPage> {
 
                                 const SizedBox(height: 25),
 
+                                DropdownButtonFormField<UserRole>(
+                                  initialValue: _role,
+                                  dropdownColor: kCard,
+                                  style: const TextStyle(color: kTextPrimary),
+                                  icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
+                                  decoration: _fieldDecoration(
+                                    label: "Role",
+                                    icon: Icons.badge_outlined,
+                                  ),
+                                  items: UserRole.values
+                                      .map(
+                                        (r) => DropdownMenuItem(
+                                          value: r,
+                                          child: Text(
+                                            r.label,
+                                            style: const TextStyle(color: kTextPrimary),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) => setState(() => _role = v),
+                                  validator: (v) =>
+                                      v == null ? "Please select a role" : null,
+                                ),
+
+                                const SizedBox(height: 18),
+
                                 TextFormField(
                                   controller: _email,
                                   keyboardType:
@@ -262,33 +289,6 @@ class _LoginPageState extends State<LoginPage> {
 
                                     return null;
                                   },
-                                ),
-
-                                const SizedBox(height: 18),
-
-                                DropdownButtonFormField<UserRole>(
-                                  initialValue: _role,
-                                  dropdownColor: kCard,
-                                  style: const TextStyle(color: kTextPrimary),
-                                  icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
-                                  decoration: _fieldDecoration(
-                                    label: "Role",
-                                    icon: Icons.badge_outlined,
-                                  ),
-                                  items: UserRole.values
-                                      .map(
-                                        (r) => DropdownMenuItem(
-                                          value: r,
-                                          child: Text(
-                                            r.label,
-                                            style: const TextStyle(color: kTextPrimary),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (v) => setState(() => _role = v),
-                                  validator: (v) =>
-                                      v == null ? "Please select a role" : null,
                                 ),
 
                                 const SizedBox(height: 30),
