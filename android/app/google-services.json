@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "670380423303",
+    "project_id": "cics-extensionoffice-caabb",
+    "storage_bucket": "cics-extensionoffice-caabb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670380423303:android:c0610e31e8949460872022",
+        "android_client_info": {
+          "package_name": "com.example.cicsextension_offiice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADk4a5URfdxi3bbj4EnGk6Ya0rPiiaUXY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
