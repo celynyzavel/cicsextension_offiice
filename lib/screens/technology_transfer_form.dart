@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common_widgets.dart';
 import '../models/form_fields.dart';
 import '../models/records.dart';
 import '../widgets/view_records.dart';
+import '../services/firestore_services.dart';
 
 class TechnologyTransferPage extends StatefulWidget {
   const TechnologyTransferPage({super.key});
@@ -117,6 +119,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
   final _formKey = GlobalKey<FormState>();
   late final List<TextEditingController> _controllers =
       technologyTransferFields.map((f) => TextEditingController(text: '')).toList();
+  bool _isSaving = false;
 
   Future<void> _pickDate(int index) async {
     final now = DateTime.now();
@@ -176,7 +179,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     // Trigger field-level "Empty Fields" messages first.
     final formValid = _formKey.currentState?.validate() ?? false;
     if (!formValid) {
@@ -186,12 +189,29 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
 
     final record = <String, dynamic>{
       'type': 'Technology Transfer',
-      'dateSaved': DateTime.now().toString(),
+      'dateSaved': DateTime.now().toIso8601String(),
+      'createdAt': FieldValue.serverTimestamp(),
     };
     for (int i = 0; i < technologyTransferFields.length; i++) {
       record[technologyTransferFields[i].label] = _controllers[i].text.trim();
     }
 
+    setState(() => _isSaving = true);
+
+    try {
+      await FirestoreService.addTechnologyTransfer(record);
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (!mounted) return;
+      showSnack(context, 'Failed to save: $e', success: false);
+      return;
+    }
+
+    setState(() => _isSaving = false);
+    if (!mounted) return;
+
+    // Keep a local copy too, so the UI still works even without a live
+    // Firestore stream wired up on View Records yet.
     RecordStorage.techTransfers.add(TechTransferRecord(record));
 
     showDialog(
@@ -356,13 +376,19 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
           const SizedBox(height: 14),
 
           SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Save Record'),
-            ),
-          ),
+  width: double.infinity,
+  child: ElevatedButton.icon(
+    onPressed: _isSaving ? null : _submit,
+    icon: _isSaving
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2, color: kWhite),
+          )
+        : const Icon(Icons.save_outlined),
+    label: Text(_isSaving ? 'Saving...' : 'Save Record'),
+  ),
+),
 
           const SizedBox(height: 12),
 
