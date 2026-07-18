@@ -15,14 +15,26 @@ class RecordForm extends StatefulWidget {
 
 class _RecordFormState extends State<RecordForm> {
   final _formKey = GlobalKey<FormState>();
-  late final List<TextEditingController> _controllers = widget.fields
-      .map((f) => TextEditingController(
-          text: f.type == FieldType.dropdown && f.options.isNotEmpty ? f.options.first : ''))
-      .toList();
 
-  // Rows for any facultyList fields: index -> list of {id, name, role}
+  late final List<TextEditingController> _controllers = widget.fields.map((f) {
+    if (f.type == FieldType.dropdown) {
+      if (f.label == "Parent Program") {
+        final titles = _getProgramTitles();
+        return TextEditingController(text: titles.isNotEmpty ? titles.first : '');
+      } else if (f.label == "Parent Project") {
+        final titles = _getProjectTitles();
+        return TextEditingController(text: titles.isNotEmpty ? titles.first : '');
+      } else {
+        return TextEditingController(text: f.options.isNotEmpty ? f.options.first : '');
+      }
+    }
+    return TextEditingController();
+  }).toList();
+
   final Map<int, List<Map<String, String>>> _facultyRows = {};
   int _facultyIdCounter = 0;
+
+  bool _submitAttempted = false;
 
   @override
   void initState() {
@@ -32,6 +44,18 @@ class _RecordFormState extends State<RecordForm> {
         _facultyRows[i] = [
           {'id': (_facultyIdCounter++).toString(), 'name': '', 'role': ''}
         ];
+      }
+    }
+
+
+    for (int i = 0; i < widget.fields.length; i++) {
+      final f = widget.fields[i];
+      if (f.type == FieldType.dropdown) {
+        if (f.label == "Parent Program") {
+          _syncIdField("Parent Program ID", _idForProgramTitle(_controllers[i].text));
+        } else if (f.label == "Parent Project") {
+          _syncIdField("Parent Project ID", _idForProjectTitle(_controllers[i].text));
+        }
       }
     }
   }
@@ -44,21 +68,40 @@ class _RecordFormState extends State<RecordForm> {
 
   List<String> _getProjectTitles() {
     List<String> projects = [];
-
     for (final program in RecordStorage.programs) {
       for (final project in program.projects) {
         projects.add(project.data["Project Title"] as String);
       }
     }
-
     return projects;
+  }
+
+  String? _idForProgramTitle(String title) {
+    for (final p in RecordStorage.programs) {
+      if (p.data["Program Title"] == title) return p.id;
+    }
+    return null;
+  }
+
+  String? _idForProjectTitle(String title) {
+    for (final program in RecordStorage.programs) {
+      for (final project in program.projects) {
+        if (project.data["Project Title"] == title) return project.id;
+      }
+    }
+    return null;
+  }
+
+  void _syncIdField(String idLabel, String? value) {
+    final idx = widget.fields.indexWhere((f) => f.label == idLabel);
+    if (idx != -1) {
+      _controllers[idx].text = value ?? '';
+    }
   }
 
   int _indexOfLabel(String label) => widget.fields.indexWhere((f) => f.label == label);
 
-  /// End Date only becomes relevant once the record's Status is "Completed".
-  bool _endDateVisible() {
-    final statusIdx = _indexOfLabel('Status');
+  bool _endDateVisible(int statusIdx) {
     if (statusIdx == -1) return true;
     return _controllers[statusIdx].text.trim() == 'Completed';
   }
@@ -100,6 +143,9 @@ class _RecordFormState extends State<RecordForm> {
   void _clear() {
     for (var i = 0; i < _controllers.length; i++) {
       final f = widget.fields[i];
+
+      if (f.type == FieldType.readonly) continue;
+
       if (f.type == FieldType.facultyList) {
         setState(() {
           _facultyRows[i] = [
@@ -111,11 +157,13 @@ class _RecordFormState extends State<RecordForm> {
       }
       if (f.type == FieldType.dropdown) {
         if (f.label == "Parent Program") {
-          final programs = _getProgramTitles();
-          _controllers[i].text = programs.isNotEmpty ? programs.first : "";
+          final titles = _getProgramTitles();
+          _controllers[i].text = titles.isNotEmpty ? titles.first : "";
+          _syncIdField("Parent Program ID", _idForProgramTitle(_controllers[i].text));
         } else if (f.label == "Parent Project") {
-          final projects = _getProjectTitles();
-          _controllers[i].text = projects.isNotEmpty ? projects.first : "";
+          final titles = _getProjectTitles();
+          _controllers[i].text = titles.isNotEmpty ? titles.first : "";
+          _syncIdField("Parent Project ID", _idForProjectTitle(_controllers[i].text));
         } else {
           _controllers[i].text = f.options.isNotEmpty ? f.options.first : "";
         }
@@ -124,10 +172,24 @@ class _RecordFormState extends State<RecordForm> {
       }
     }
     _formKey.currentState?.reset();
+    setState(() => _submitAttempted = false);
+  }
+
+  bool _facultyMissing(int i) {
+    final f = widget.fields[i];
+    if (f.type != FieldType.facultyList || f.optional) return false;
+    return _controllers[i].text.trim().isEmpty;
   }
 
   void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+    final formValid = _formKey.currentState!.validate();
+    final facultyValid =
+        !List.generate(widget.fields.length, (i) => i).any(_facultyMissing);
+
+    if (!formValid || !facultyValid) {
+      setState(() => _submitAttempted = true);
+      return;
+    }
 
     // Save the record
     Map<String, dynamic> record = {
@@ -135,8 +197,14 @@ class _RecordFormState extends State<RecordForm> {
       "dateSaved": DateTime.now().toString(),
     };
 
+    final statusIdx = _indexOfLabel('Status');
     for (int i = 0; i < widget.fields.length; i++) {
-      record[widget.fields[i].label] = _controllers[i].text;
+      final f = widget.fields[i];
+      if (f.label == 'End Date' && !_endDateVisible(statusIdx)) {
+        record[f.label] = '';
+        continue;
+      }
+      record[f.label] = _controllers[i].text;
     }
 
     //============================
@@ -152,13 +220,13 @@ class _RecordFormState extends State<RecordForm> {
     // SAVE PROJECT
     //============================
     else if (widget.recordLabel == "Project") {
-      String parentProgram =
-          record["Parent Program"] ?? "";
+
+      String parentProgramId = record["Parent Program ID"] ?? "";
 
       bool found = false;
 
       for (var program in RecordStorage.programs) {
-        if (program.data["Program Title"] == parentProgram) {
+        if (program.id == parentProgramId) {
           program.projects.add(
             ProjectRecord(record),
           );
@@ -187,14 +255,14 @@ class _RecordFormState extends State<RecordForm> {
     // SAVE ACTIVITY
     //============================
     else if (widget.recordLabel == "Activity") {
-      String parentProject =
-          record["Parent Project"] ?? "";
+
+      String parentProjectId = record["Parent Project ID"] ?? "";
 
       bool found = false;
 
       for (var program in RecordStorage.programs) {
         for (var project in program.projects) {
-          if (project.data["Project Title"] == parentProject) {
+          if (project.id == parentProjectId) {
             project.activities.add(
               ActivityRecord(record),
             );
@@ -203,6 +271,7 @@ class _RecordFormState extends State<RecordForm> {
             break;
           }
         }
+        if (found) break;
       }
 
       // Standalone activity
@@ -278,10 +347,20 @@ class _RecordFormState extends State<RecordForm> {
 
   Widget _buildField(int i) {
     final f = widget.fields[i];
+    final statusIdx = _indexOfLabel('Status');
+
+    if (f.label == 'End Date' && !_endDateVisible(statusIdx)) {
+      return const SizedBox.shrink();
+    }
+
+    bool requiredNow = !f.optional;
+    if (f.label == 'End Date') {
+      requiredNow = _endDateVisible(statusIdx);
+    }
 
     InputDecoration deco({Widget? suffixIcon}) => InputDecoration(
       hintText: "Enter ${f.label}",
-      labelText: f.label,
+      labelText: requiredNow ? f.label : '${f.label} (optional)',
       prefixIcon: Icon(f.icon, color: kPrimary),
       suffixIcon: suffixIcon,
     );
@@ -290,13 +369,36 @@ class _RecordFormState extends State<RecordForm> {
       return _buildFacultyField(i);
     }
 
+    if (f.type == FieldType.readonly) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: TextFormField(
+          controller: _controllers[i],
+          enabled: false,
+          style: const TextStyle(color: kTextSecondary, fontStyle: FontStyle.italic),
+          decoration: InputDecoration(
+            labelText: f.label,
+            hintText: "Auto-filled from selection above",
+            prefixIcon: Icon(f.icon, color: kMuted),
+            filled: true,
+            fillColor: kCard,
+          ),
+        ),
+      );
+    }
+
     if (f.type == FieldType.dropdown) {
-      final options =
-          f.label == "Parent Program"
-              ? _getProgramTitles()
-              : f.label == "Parent Project"
-                  ? _getProjectTitles()
-                  : f.options;
+      final isParentProgram = f.label == "Parent Program";
+      final isParentProject = f.label == "Parent Project";
+
+      final options = isParentProgram
+          ? _getProgramTitles()
+          : isParentProject
+              ? _getProjectTitles()
+              : f.options;
+
+      final hasNoParents = (isParentProgram || isParentProject) && options.isEmpty;
+
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: DropdownButtonFormField<String>(
@@ -304,7 +406,16 @@ class _RecordFormState extends State<RecordForm> {
           dropdownColor: kCard,
           style: const TextStyle(color: kTextPrimary),
           icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
-          decoration: deco(),
+          decoration: deco(
+            suffixIcon: hasNoParents
+                ? Tooltip(
+                    message: isParentProgram
+                        ? "No programs yet — this will be saved as a standalone project"
+                        : "No projects yet — this will be saved as a standalone activity",
+                    child: const Icon(Icons.info_outline, color: kMuted),
+                  )
+                : null,
+          ),
           items: options
               .map(
                 (o) => DropdownMenuItem(
@@ -318,21 +429,21 @@ class _RecordFormState extends State<RecordForm> {
               .toList(),
           onChanged: (v) => setState(() {
             _controllers[i].text = v ?? '';
-            if (f.label == 'Status' && v != 'Completed') {
+            if (isParentProgram) {
+              _syncIdField("Parent Program ID", _idForProgramTitle(v ?? ''));
+            } else if (isParentProject) {
+              _syncIdField("Parent Project ID", _idForProjectTitle(v ?? ''));
+            } else if (f.label == "Status" && v != 'Completed') {
               final endIdx = _indexOfLabel('End Date');
               if (endIdx != -1) _controllers[endIdx].clear();
             }
           }),
           validator: (v) {
-            if (f.optional) return null;
+            if (!requiredNow) return null;
             return (v == null || v.isEmpty) ? '${f.label} must be selected' : null;
           },
         ),
       );
-    }
-
-    if (f.label == 'End Date' && !_endDateVisible()) {
-      return const SizedBox.shrink();
     }
 
     if (f.type == FieldType.date) {
@@ -345,7 +456,6 @@ class _RecordFormState extends State<RecordForm> {
           onTap: () => _pickDate(i),
           decoration: deco(suffixIcon: const Icon(Icons.calendar_month_outlined, color: kMuted)),
           validator: (v) {
-            final requiredNow = f.label == 'End Date' ? _endDateVisible() : !f.optional;
             if (!requiredNow) return null;
             return (v == null || v.trim().isEmpty) ? '${f.label} must not be empty' : null;
           },
@@ -359,12 +469,21 @@ class _RecordFormState extends State<RecordForm> {
         controller: _controllers[i],
         style: const TextStyle(color: kTextPrimary),
         maxLines: f.type == FieldType.multiline ? f.maxLines : 1,
-        keyboardType: f.type == FieldType.number ? TextInputType.number : TextInputType.text,
+        keyboardType: f.type == FieldType.number
+            ? TextInputType.numberWithOptions(decimal: f.allowDecimal)
+            : TextInputType.text,
         decoration: deco(),
         validator: (v) {
-          if (f.optional) return null;
-          if (v == null || v.trim().isEmpty) return '${f.label} must not be empty';
-          if (f.type == FieldType.number && int.tryParse(v.trim()) == null) return 'Enter a valid number';
+          if (v == null || v.trim().isEmpty) {
+            return requiredNow ? '${f.label} must not be empty' : null;
+          }
+          if (f.type == FieldType.number) {
+            final trimmed = v.trim();
+            final numVal = f.allowDecimal ? double.tryParse(trimmed) : int.tryParse(trimmed);
+            if (numVal == null) return 'Enter a valid number';
+            if (f.min != null && numVal < f.min!) return '${f.label} must be at least ${f.min}';
+            if (f.max != null && numVal > f.max!) return '${f.label} must be at most ${f.max}';
+          }
           return null;
         },
       ),
@@ -374,6 +493,7 @@ class _RecordFormState extends State<RecordForm> {
   Widget _buildFacultyField(int i) {
     final f = widget.fields[i];
     final rows = _facultyRows[i]!;
+    final showError = _submitAttempted && !f.optional && _controllers[i].text.trim().isEmpty;
 
     void syncController() {
       _controllers[i].text = rows
@@ -411,10 +531,10 @@ class _RecordFormState extends State<RecordForm> {
                       initialValue: row['name'],
                       style: const TextStyle(color: kTextPrimary),
                       decoration: const InputDecoration(labelText: 'Faculty Name', isDense: true),
-                      onChanged: (v) {
+                      onChanged: (v) => setState(() {
                         row['name'] = v;
                         syncController();
-                      },
+                      }),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -424,10 +544,10 @@ class _RecordFormState extends State<RecordForm> {
                       initialValue: row['role'],
                       style: const TextStyle(color: kTextPrimary),
                       decoration: const InputDecoration(labelText: 'Role', isDense: true),
-                      onChanged: (v) {
+                      onChanged: (v) => setState(() {
                         row['role'] = v;
                         syncController();
-                      },
+                      }),
                     ),
                   ),
                   IconButton(
@@ -452,6 +572,14 @@ class _RecordFormState extends State<RecordForm> {
               label: const Text('Add Faculty'),
             ),
           ),
+          if (showError)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 4),
+              child: Text(
+                '${f.label}: add at least one faculty member',
+                style: const TextStyle(color: kDanger, fontSize: 12.5),
+              ),
+            ),
         ],
       ),
     );
