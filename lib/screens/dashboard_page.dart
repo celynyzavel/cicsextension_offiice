@@ -185,10 +185,9 @@ class _DashboardPageState extends State<DashboardPage> {
         }
       }
 
-      final pre = double.tryParse((a.data['Avg Pre-Test Score (%)'] ?? '').toString());
-      final post = double.tryParse((a.data['Avg Post-Test Score (%)'] ?? '').toString());
-      if (pre != null && post != null) {
-        knowledgeGains.add(post - pre);
+      final gain = a.knowledgeGain;
+      if (gain != null) {
+        knowledgeGains.add(gain);
       }
     }
 
