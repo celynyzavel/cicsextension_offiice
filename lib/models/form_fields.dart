@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum FieldType { text, number, multiline, date, dropdown }
+enum FieldType { text, number, multiline, date, dropdown, facultyList }
 
 class FieldSpec {
   final String label;
@@ -31,39 +31,34 @@ const programFields = [
   FieldSpec('Status', Icons.flag_outlined,
       type: FieldType.dropdown, options: ['Running', 'Completed', 'Pending']),
   FieldSpec('Partner / Beneficiaries', Icons.groups_outlined, optional: true),
-  FieldSpec('Objectives', Icons.track_changes_outlined, type: FieldType.multiline, maxLines: 3, optional: true),
-  FieldSpec('Program Description', Icons.description_outlined, type: FieldType.multiline, maxLines: 3),
 ];
 
 
 const projectFields = [
   FieldSpec('Project Title', Icons.volunteer_activism_outlined),
-FieldSpec('Parent Program', Icons.folder_open_outlined, type: FieldType.dropdown,),
+  FieldSpec('Parent Program', Icons.folder_open_outlined, type: FieldType.dropdown,),
   FieldSpec('Start Date', Icons.calendar_today_outlined, type: FieldType.date),
   FieldSpec('End Date', Icons.event_available_outlined, type: FieldType.date),
   FieldSpec('Status', Icons.flag_outlined,
       type: FieldType.dropdown, options: ['Running', 'Completed', 'Pending']),
   FieldSpec('Beneficiaries', Icons.groups_outlined),
-  FieldSpec('Budget Allocated (PHP)', Icons.payments_outlined, type: FieldType.number),
   FieldSpec('Lead Implementer', Icons.person_outline, optional: true),
-  FieldSpec('Objectives', Icons.track_changes_outlined, type: FieldType.multiline, maxLines: 3, optional: true),
-  FieldSpec('Description / Remarks', Icons.notes_outlined, type: FieldType.multiline, maxLines: 3, optional: true),
 ];
 
 
 const activityFields = [
-  FieldSpec('Parent Project', Icons.folder_open_outlined, type: FieldType.dropdown,),
+  FieldSpec('Parent Project', Icons.folder_open_outlined, type: FieldType.dropdown),
+  FieldSpec('Activity Title', Icons.bolt_outlined),
   FieldSpec('Date', Icons.calendar_today_outlined, type: FieldType.date, optional: true),
   FieldSpec('Location', Icons.location_on_outlined, optional: true),
   FieldSpec('Participants', Icons.groups_outlined, type: FieldType.number, optional: true),
   FieldSpec('Status', Icons.flag_outlined,
       type: FieldType.dropdown, options: ['Completed', 'Ongoing', 'Planned']),
-  FieldSpec('Faculty Involved (names & roles)', Icons.people_alt_outlined, type: FieldType.multiline, maxLines: 3, optional: true),
+  FieldSpec('Faculty Involved', Icons.people_alt_outlined, type: FieldType.facultyList, optional: true),
   FieldSpec('Avg Pre-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
   FieldSpec('Avg Post-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
   FieldSpec('Number of Pre-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
   FieldSpec('Number of Post-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Knowledge Gain', Icons.groups_2_outlined, type: FieldType.number, optional: true),
   FieldSpec('Satisfaction Rate (%)', Icons.thumb_up_alt_outlined, type: FieldType.number, optional: true),
 ];
 
