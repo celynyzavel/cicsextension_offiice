@@ -32,6 +32,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
     required List<MapEntry<String, dynamic>> entries,
     List<Widget> nested = const [],
     VoidCallback? onUpdate,
+    VoidCallback? onDelete,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -91,7 +92,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                 ),
               ),
             ),
-            if (onUpdate != null) updateButtonRow(onUpdate),
+            if (onUpdate != null) actionButtonRow(onUpdate: onUpdate, onDelete: onDelete),
             if (nested.isNotEmpty) ...[
               const Divider(color: kCardBorder, height: 20, indent: 16, endIndent: 16),
               ...nested,
@@ -102,18 +103,56 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
     );
   }
 
-  /// Small right-aligned "Update" action shown at the bottom of a record's
-  /// expanded details, letting the user edit the saved information.
-  Widget updateButtonRow(VoidCallback onPressed) {
+  Widget actionButtonRow({required VoidCallback onUpdate, VoidCallback? onDelete}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(
-          onPressed: onPressed,
-          icon: const Icon(Icons.edit_outlined, size: 17),
-          label: const Text("Update"),
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (onDelete != null) ...[
+            TextButton.icon(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline, size: 17, color: kDanger),
+              label: const Text("Delete", style: TextStyle(color: kDanger)),
+            ),
+            const SizedBox(width: 4),
+          ],
+          TextButton.icon(
+            onPressed: onUpdate,
+            icon: const Icon(Icons.edit_outlined, size: 17),
+            label: const Text("Update"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded, color: kDanger, size: 30),
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel", style: TextStyle(color: kTextSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: kDanger, foregroundColor: kWhite),
+            onPressed: () {
+              onConfirm();
+              Navigator.pop(context);
+            },
+            child: const Text("Delete"),
+          ),
+        ],
       ),
     );
   }
@@ -163,6 +202,17 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                         data: techTransfer.data,
                         onSave: (updated) => setState(() => techTransfer.data = updated),
                       ),
+                      onDelete: widget.canDeleteTechTransfers
+                          ? () => _confirmDelete(
+                                context,
+                                title: "Delete Technology Transfer",
+                                message:
+                                    "Are you sure you want to delete \"${techTransfer.data["System Name"] ?? "this record"}\"? This cannot be undone.",
+                                onConfirm: () => setState(
+                                  () => RecordStorage.techTransfers.remove(techTransfer),
+                                ),
+                              )
+                          : null,
                     ),
                   ),
                   if (hasPrograms) const SizedBox(height: 8),
@@ -184,6 +234,17 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                         data: program.data,
                         onSave: (updated) => setState(() => program.data = updated),
                       ),
+                      onDelete: widget.canDeletePrograms
+                          ? () => _confirmDelete(
+                                context,
+                                title: "Delete Program",
+                                message:
+                                    "Are you sure you want to delete \"${program.data["Program Title"] ?? "this program"}\"? Its projects and activities will be deleted too. This cannot be undone.",
+                                onConfirm: () => setState(
+                                  () => RecordStorage.programs.remove(program),
+                                ),
+                              )
+                          : null,
                       nested: program.projects.map((project) {
                         return Padding(
                           padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
@@ -246,13 +307,26 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                       ),
                                     ),
                                   ),
-                                  updateButtonRow(() => showEditRecordSheet(
-                                        context,
-                                        title: "Update Project",
-                                        fields: projectFields,
-                                        data: project.data,
-                                        onSave: (updated) => setState(() => project.data = updated),
-                                      )),
+                                  actionButtonRow(
+                                    onUpdate: () => showEditRecordSheet(
+                                      context,
+                                      title: "Update Project",
+                                      fields: projectFields,
+                                      data: project.data,
+                                      onSave: (updated) => setState(() => project.data = updated),
+                                    ),
+                                    onDelete: widget.canDeletePrograms
+                                        ? () => _confirmDelete(
+                                              context,
+                                              title: "Delete Project",
+                                              message:
+                                                  "Are you sure you want to delete \"${project.data["Project Title"] ?? "this project"}\"? Its activities will be deleted too. This cannot be undone.",
+                                              onConfirm: () => setState(
+                                                () => program.projects.remove(project),
+                                              ),
+                                            )
+                                        : null,
+                                  ),
                                   ...project.activities.map(
                                     (activity) => Padding(
                                       padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
@@ -348,14 +422,27 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                     ],
                                                   ),
                                                 ),
-                                              updateButtonRow(() => showEditRecordSheet(
-                                                    context,
-                                                    title: "Update Activity",
-                                                    fields: activityFields,
-                                                    data: activity.data,
-                                                    onSave: (updated) =>
-                                                        setState(() => activity.data = updated),
-                                                  )),
+                                              actionButtonRow(
+                                                onUpdate: () => showEditRecordSheet(
+                                                  context,
+                                                  title: "Update Activity",
+                                                  fields: activityFields,
+                                                  data: activity.data,
+                                                  onSave: (updated) =>
+                                                      setState(() => activity.data = updated),
+                                                ),
+                                                onDelete: widget.canDeletePrograms
+                                                    ? () => _confirmDelete(
+                                                          context,
+                                                          title: "Delete Activity",
+                                                          message:
+                                                              "Are you sure you want to delete \"${activity.data["Activity Title"] ?? "this activity"}\"? This cannot be undone.",
+                                                          onConfirm: () => setState(
+                                                            () => project.activities.remove(activity),
+                                                          ),
+                                                        )
+                                                    : null,
+                                              ),
                                             ],
                                           ),
                                         ),
