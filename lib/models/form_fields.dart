@@ -36,7 +36,11 @@ const programFields = [
   FieldSpec('Location / Community / Barangay', Icons.location_on_outlined),
   FieldSpec('Status', Icons.flag_outlined,
       type: FieldType.dropdown, options: ['Running', 'Completed', 'Pending']),
+<<<<<<< HEAD
   FieldSpec('Partner / Beneficiaries', Icons.groups_outlined),
+=======
+  FieldSpec('Partner / Beneficiaries', Icons.groups_outlined, optional: true),
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
 ];
 
 
@@ -49,7 +53,11 @@ const projectFields = [
   FieldSpec('Status', Icons.flag_outlined,
       type: FieldType.dropdown, options: ['Running', 'Completed', 'Pending']),
   FieldSpec('Beneficiaries', Icons.groups_outlined),
+<<<<<<< HEAD
   FieldSpec('Lead Implementer', Icons.person_outline),
+=======
+  FieldSpec('Lead Implementer', Icons.person_outline, optional: true),
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
 ];
 
 
@@ -57,6 +65,7 @@ const activityFields = [
   FieldSpec('Parent Project', Icons.folder_open_outlined, type: FieldType.dropdown),
   FieldSpec('Parent Project ID', Icons.tag_outlined, type: FieldType.readonly, optional: true),
   FieldSpec('Activity Title', Icons.bolt_outlined),
+<<<<<<< HEAD
   FieldSpec('Date', Icons.calendar_today_outlined, type: FieldType.date),
   FieldSpec('Location', Icons.location_on_outlined),
   FieldSpec('Participants', Icons.groups_outlined, type: FieldType.number, min: 0),
@@ -73,6 +82,19 @@ const activityFields = [
       type: FieldType.number, min: 0),
   FieldSpec('Satisfaction Rate (1-5)', Icons.thumb_up_alt_outlined,
       type: FieldType.number, min: 1, max: 5),
+=======
+  FieldSpec('Date', Icons.calendar_today_outlined, type: FieldType.date, optional: true),
+  FieldSpec('Location', Icons.location_on_outlined, optional: true),
+  FieldSpec('Participants', Icons.groups_outlined, type: FieldType.number, optional: true),
+  FieldSpec('Status', Icons.flag_outlined,
+      type: FieldType.dropdown, options: ['Completed', 'Ongoing', 'Planned']),
+  FieldSpec('Faculty Involved', Icons.people_alt_outlined, type: FieldType.facultyList, optional: true),
+  FieldSpec('Avg Pre-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
+  FieldSpec('Avg Post-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
+  FieldSpec('Number of Pre-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
+  FieldSpec('Number of Post-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
+  FieldSpec('Satisfaction Rate (%)', Icons.thumb_up_alt_outlined, type: FieldType.number, optional: true),
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
 ];
 
 

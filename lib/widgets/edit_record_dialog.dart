@@ -149,6 +149,7 @@ class _EditRecordDialogState extends State<EditRecordDialog> {
         controller: _controllers[i],
         style: const TextStyle(color: kTextPrimary),
         maxLines: f.type == FieldType.multiline ? f.maxLines : 1,
+<<<<<<< HEAD
         keyboardType: f.type == FieldType.number
             ? TextInputType.numberWithOptions(decimal: f.allowDecimal)
             : TextInputType.text,
@@ -164,6 +165,14 @@ class _EditRecordDialogState extends State<EditRecordDialog> {
             if (f.min != null && numVal < f.min!) return '${f.label} must be at least ${f.min}';
             if (f.max != null && numVal > f.max!) return '${f.label} must be at most ${f.max}';
           }
+=======
+        keyboardType: f.type == FieldType.number ? TextInputType.number : TextInputType.text,
+        decoration: deco(),
+        validator: (v) {
+          if (!requiredNow) return null;
+          if (v == null || v.trim().isEmpty) return '${f.label} must not be empty';
+          if (f.type == FieldType.number && int.tryParse(v.trim()) == null) return 'Enter a valid number';
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
           return null;
         },
       ),

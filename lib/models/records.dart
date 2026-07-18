@@ -66,4 +66,8 @@ class TechTransferRecord {
   Map<String, dynamic> data;
 
   TechTransferRecord(this.data);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8

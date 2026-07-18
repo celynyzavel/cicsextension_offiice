@@ -31,11 +31,18 @@ class _RecordFormState extends State<RecordForm> {
     return TextEditingController();
   }).toList();
 
+<<<<<<< HEAD
   final Map<int, List<Map<String, String>>> _facultyRows = {};
   int _facultyIdCounter = 0;
 
   bool _submitAttempted = false;
 
+=======
+  // Rows for any facultyList fields: index -> list of {id, name, role}
+  final Map<int, List<Map<String, String>>> _facultyRows = {};
+  int _facultyIdCounter = 0;
+
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
   @override
   void initState() {
     super.initState();
@@ -47,7 +54,12 @@ class _RecordFormState extends State<RecordForm> {
       }
     }
 
+<<<<<<< HEAD
 
+=======
+    // Now that every controller exists, populate the read-only ID
+    // fields based on whatever the parent dropdowns start out as.
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
     for (int i = 0; i < widget.fields.length; i++) {
       final f = widget.fields[i];
       if (f.type == FieldType.dropdown) {
@@ -60,6 +72,11 @@ class _RecordFormState extends State<RecordForm> {
     }
   }
 
+<<<<<<< HEAD
+=======
+  // ---- Name lists for the parent dropdowns (what the user sees/picks) ----
+
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
   List<String> _getProgramTitles() {
     return RecordStorage.programs
         .map((p) => p.data["Program Title"] as String)
@@ -76,6 +93,12 @@ class _RecordFormState extends State<RecordForm> {
     return projects;
   }
 
+<<<<<<< HEAD
+=======
+  // ---- Name -> auto-generated ID lookups, used to populate the
+  // read-only "Parent Program ID" / "Parent Project ID" fields ----
+
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
   String? _idForProgramTitle(String title) {
     for (final p in RecordStorage.programs) {
       if (p.data["Program Title"] == title) return p.id;
@@ -92,12 +115,18 @@ class _RecordFormState extends State<RecordForm> {
     return null;
   }
 
+<<<<<<< HEAD
+=======
+  /// Writes [value] into the controller for the field labeled [idLabel]
+  /// (e.g. "Parent Program ID"), if that field exists in this form.
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
   void _syncIdField(String idLabel, String? value) {
     final idx = widget.fields.indexWhere((f) => f.label == idLabel);
     if (idx != -1) {
       _controllers[idx].text = value ?? '';
     }
   }
+<<<<<<< HEAD
 
   int _indexOfLabel(String label) => widget.fields.indexWhere((f) => f.label == label);
 
@@ -105,6 +134,8 @@ class _RecordFormState extends State<RecordForm> {
     if (statusIdx == -1) return true;
     return _controllers[statusIdx].text.trim() == 'Completed';
   }
+=======
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
 
   Future<void> _pickDate(int index) async {
     final now = DateTime.now();
@@ -144,6 +175,11 @@ class _RecordFormState extends State<RecordForm> {
     for (var i = 0; i < _controllers.length; i++) {
       final f = widget.fields[i];
 
+<<<<<<< HEAD
+=======
+      // Read-only ID fields are derived from their dropdown — they get
+      // set below when we process that dropdown, so skip them here.
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
       if (f.type == FieldType.readonly) continue;
 
       if (f.type == FieldType.facultyList) {
@@ -220,7 +256,13 @@ class _RecordFormState extends State<RecordForm> {
     // SAVE PROJECT
     //============================
     else if (widget.recordLabel == "Project") {
+<<<<<<< HEAD
 
+=======
+      // The FK is the auto-filled "Parent Program ID" field, NOT the
+      // "Parent Program" name field — names can repeat or be renamed,
+      // IDs can't.
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
       String parentProgramId = record["Parent Program ID"] ?? "";
 
       bool found = false;
@@ -255,7 +297,11 @@ class _RecordFormState extends State<RecordForm> {
     // SAVE ACTIVITY
     //============================
     else if (widget.recordLabel == "Activity") {
+<<<<<<< HEAD
 
+=======
+      // Same idea: match on the auto-filled "Parent Project ID".
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
       String parentProjectId = record["Parent Project ID"] ?? "";
 
       bool found = false;
@@ -369,6 +415,10 @@ class _RecordFormState extends State<RecordForm> {
       return _buildFacultyField(i);
     }
 
+<<<<<<< HEAD
+=======
+    // Read-only, auto-filled ID fields (Parent Program ID / Parent Project ID)
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
     if (f.type == FieldType.readonly) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -433,9 +483,12 @@ class _RecordFormState extends State<RecordForm> {
               _syncIdField("Parent Program ID", _idForProgramTitle(v ?? ''));
             } else if (isParentProject) {
               _syncIdField("Parent Project ID", _idForProjectTitle(v ?? ''));
+<<<<<<< HEAD
             } else if (f.label == "Status" && v != 'Completed') {
               final endIdx = _indexOfLabel('End Date');
               if (endIdx != -1) _controllers[endIdx].clear();
+=======
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
             }
           }),
           validator: (v) {
@@ -493,7 +546,10 @@ class _RecordFormState extends State<RecordForm> {
   Widget _buildFacultyField(int i) {
     final f = widget.fields[i];
     final rows = _facultyRows[i]!;
+<<<<<<< HEAD
     final showError = _submitAttempted && !f.optional && _controllers[i].text.trim().isEmpty;
+=======
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
 
     void syncController() {
       _controllers[i].text = rows
@@ -531,10 +587,17 @@ class _RecordFormState extends State<RecordForm> {
                       initialValue: row['name'],
                       style: const TextStyle(color: kTextPrimary),
                       decoration: const InputDecoration(labelText: 'Faculty Name', isDense: true),
+<<<<<<< HEAD
                       onChanged: (v) => setState(() {
                         row['name'] = v;
                         syncController();
                       }),
+=======
+                      onChanged: (v) {
+                        row['name'] = v;
+                        syncController();
+                      },
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -544,10 +607,17 @@ class _RecordFormState extends State<RecordForm> {
                       initialValue: row['role'],
                       style: const TextStyle(color: kTextPrimary),
                       decoration: const InputDecoration(labelText: 'Role', isDense: true),
+<<<<<<< HEAD
                       onChanged: (v) => setState(() {
                         row['role'] = v;
                         syncController();
                       }),
+=======
+                      onChanged: (v) {
+                        row['role'] = v;
+                        syncController();
+                      },
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
                     ),
                   ),
                   IconButton(
@@ -572,6 +642,7 @@ class _RecordFormState extends State<RecordForm> {
               label: const Text('Add Faculty'),
             ),
           ),
+<<<<<<< HEAD
           if (showError)
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 4),
@@ -580,6 +651,8 @@ class _RecordFormState extends State<RecordForm> {
                 style: const TextStyle(color: kDanger, fontSize: 12.5),
               ),
             ),
+=======
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
         ],
       ),
     );
@@ -660,4 +733,8 @@ class _RecordFormState extends State<RecordForm> {
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
