@@ -1,8 +1,21 @@
-
 class ActivityRecord {
   Map<String, dynamic> data;
 
   ActivityRecord(this.data);
+
+  double? get avgPreTestScore =>
+      double.tryParse((data['Avg Pre-Test Score (%)'] ?? '').toString());
+
+  double? get avgPostTestScore =>
+      double.tryParse((data['Avg Post-Test Score (%)'] ?? '').toString());
+
+  /// Derived — never manually entered.
+  double? get knowledgeGain {
+    final pre = avgPreTestScore;
+    final post = avgPostTestScore;
+    if (pre == null || post == null) return null;
+    return post - pre;
+  }
 }
 
 class ProjectRecord {

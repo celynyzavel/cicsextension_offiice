@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/records.dart';
+import '../models/form_fields.dart';
 import 'common_widgets.dart';
+import 'edit_record_dialog.dart';
 
 enum ViewRecordsScope { extensionOnly, all }
 
@@ -29,6 +31,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
     required String subtitle,
     required List<MapEntry<String, dynamic>> entries,
     List<Widget> nested = const [],
+    VoidCallback? onUpdate,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -61,7 +64,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                 ),
           childrenPadding: const EdgeInsets.only(bottom: 8),
           children: [
-            ...entries.map(
+            ...entries.where((e) => e.value.toString().trim().isNotEmpty).map(
               (entry) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Row(
@@ -88,11 +91,28 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                 ),
               ),
             ),
+            if (onUpdate != null) updateButtonRow(onUpdate),
             if (nested.isNotEmpty) ...[
               const Divider(color: kCardBorder, height: 20, indent: 16, endIndent: 16),
               ...nested,
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Small right-aligned "Update" action shown at the bottom of a record's
+  /// expanded details, letting the user edit the saved information.
+  Widget updateButtonRow(VoidCallback onPressed) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: TextButton.icon(
+          onPressed: onPressed,
+          icon: const Icon(Icons.edit_outlined, size: 17),
+          label: const Text("Update"),
         ),
       ),
     );
@@ -136,6 +156,13 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                       title: techTransfer.data["System Name"] ?? "Technology Transfer",
                       subtitle: techTransfer.data["Usage Status"] ?? "",
                       entries: techTransfer.data.entries.toList(),
+                      onUpdate: () => showEditRecordSheet(
+                        context,
+                        title: "Update Technology Transfer",
+                        fields: technologyTransferFields,
+                        data: techTransfer.data,
+                        onSave: (updated) => setState(() => techTransfer.data = updated),
+                      ),
                     ),
                   ),
                   if (hasPrograms) const SizedBox(height: 8),
@@ -150,6 +177,13 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                       title: program.data["Program Title"] ?? "Program",
                       subtitle: program.data["Status"] ?? "",
                       entries: program.data.entries.toList(),
+                      onUpdate: () => showEditRecordSheet(
+                        context,
+                        title: "Update Program",
+                        fields: programFields,
+                        data: program.data,
+                        onSave: (updated) => setState(() => program.data = updated),
+                      ),
                       nested: program.projects.map((project) {
                         return Padding(
                           padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
@@ -183,7 +217,9 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                         ),
                                       ),
                                 children: [
-                                  ...project.data.entries.map(
+                                  ...project.data.entries
+                                      .where((e) => e.value.toString().trim().isNotEmpty)
+                                      .map(
                                     (entry) => Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                                       child: Row(
@@ -210,6 +246,13 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                       ),
                                     ),
                                   ),
+                                  updateButtonRow(() => showEditRecordSheet(
+                                        context,
+                                        title: "Update Project",
+                                        fields: projectFields,
+                                        data: project.data,
+                                        onSave: (updated) => setState(() => project.data = updated),
+                                      )),
                                   ...project.activities.map(
                                     (activity) => Padding(
                                       padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
@@ -242,37 +285,78 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                       child: StatusChip(activity.data["Status"] ?? ""),
                                                     ),
                                                   ),
-                                            children: activity.data.entries
-                                                .map(
-                                                  (entry) => Padding(
-                                                    padding: const EdgeInsets.symmetric(
-                                                        horizontal: 16, vertical: 6),
-                                                    child: Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        SizedBox(
-                                                          width: 130,
-                                                          child: Text(
-                                                            entry.key,
-                                                            style: const TextStyle(
-                                                              color: kTextSecondary,
-                                                              fontWeight: FontWeight.w600,
-                                                              fontSize: 13,
-                                                            ),
+                                            children: [
+                                              ...activity.data.entries
+                                                  .where((e) => e.value.toString().trim().isNotEmpty)
+                                                  .map(
+                                                (entry) => Padding(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 16, vertical: 6),
+                                                  child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      SizedBox(
+                                                        width: 130,
+                                                        child: Text(
+                                                          entry.key,
+                                                          style: const TextStyle(
+                                                            color: kTextSecondary,
+                                                            fontWeight: FontWeight.w600,
+                                                            fontSize: 13,
                                                           ),
                                                         ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            entry.value.toString(),
-                                                            style: const TextStyle(
-                                                                color: kTextPrimary, fontSize: 13),
-                                                          ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          entry.value.toString(),
+                                                          style: const TextStyle(
+                                                              color: kTextPrimary, fontSize: 13),
                                                         ),
-                                                      ],
-                                                    ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                )
-                                                .toList(),
+                                                ),
+                                              ),
+                                              if (activity.knowledgeGain != null)
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 16, vertical: 6),
+                                                  child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      const SizedBox(
+                                                        width: 130,
+                                                        child: Text(
+                                                          'Knowledge Gain',
+                                                          style: TextStyle(
+                                                            color: kTextSecondary,
+                                                            fontWeight: FontWeight.w600,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${activity.knowledgeGain!.toStringAsFixed(1)}%',
+                                                          style: const TextStyle(
+                                                            color: kSuccess,
+                                                            fontWeight: FontWeight.w700,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              updateButtonRow(() => showEditRecordSheet(
+                                                    context,
+                                                    title: "Update Activity",
+                                                    fields: activityFields,
+                                                    data: activity.data,
+                                                    onSave: (updated) =>
+                                                        setState(() => activity.data = updated),
+                                                  )),
+                                            ],
                                           ),
                                         ),
                                       ),

@@ -20,23 +20,39 @@ class _RecordFormState extends State<RecordForm> {
           text: f.type == FieldType.dropdown && f.options.isNotEmpty ? f.options.first : ''))
       .toList();
 
-      List<String> _getProgramTitles() {
-  return RecordStorage.programs
-      .map((p) => p.data["Program Title"] as String)
-      .toList();
-}
+  // Rows for any facultyList fields: index -> list of {id, name, role}
+  final Map<int, List<Map<String, String>>> _facultyRows = {};
+  int _facultyIdCounter = 0;
 
-List<String> _getProjectTitles() {
-  List<String> projects = [];
-
-  for (final program in RecordStorage.programs) {
-    for (final project in program.projects) {
-      projects.add(project.data["Project Title"] as String);
+  @override
+  void initState() {
+    super.initState();
+    for (int i = 0; i < widget.fields.length; i++) {
+      if (widget.fields[i].type == FieldType.facultyList) {
+        _facultyRows[i] = [
+          {'id': (_facultyIdCounter++).toString(), 'name': '', 'role': ''}
+        ];
+      }
     }
   }
 
-  return projects;
-}
+  List<String> _getProgramTitles() {
+    return RecordStorage.programs
+        .map((p) => p.data["Program Title"] as String)
+        .toList();
+  }
+
+  List<String> _getProjectTitles() {
+    List<String> projects = [];
+
+    for (final program in RecordStorage.programs) {
+      for (final project in program.projects) {
+        projects.add(project.data["Project Title"] as String);
+      }
+    }
+
+    return projects;
+  }
 
   Future<void> _pickDate(int index) async {
     final now = DateTime.now();
@@ -75,19 +91,28 @@ List<String> _getProjectTitles() {
   void _clear() {
     for (var i = 0; i < _controllers.length; i++) {
       final f = widget.fields[i];
+      if (f.type == FieldType.facultyList) {
+        setState(() {
+          _facultyRows[i] = [
+            {'id': (_facultyIdCounter++).toString(), 'name': '', 'role': ''}
+          ];
+        });
+        _controllers[i].clear();
+        continue;
+      }
       if (f.type == FieldType.dropdown) {
-  if (f.label == "Parent Program") {
-    final programs = _getProgramTitles();
-    _controllers[i].text = programs.isNotEmpty ? programs.first : "";
-  } else if (f.label == "Parent Project") {
-    final projects = _getProjectTitles();
-    _controllers[i].text = projects.isNotEmpty ? projects.first : "";
-  } else {
-    _controllers[i].text = f.options.isNotEmpty ? f.options.first : "";
-  }
-} else {
-  _controllers[i].clear();
-}
+        if (f.label == "Parent Program") {
+          final programs = _getProgramTitles();
+          _controllers[i].text = programs.isNotEmpty ? programs.first : "";
+        } else if (f.label == "Parent Project") {
+          final projects = _getProjectTitles();
+          _controllers[i].text = projects.isNotEmpty ? projects.first : "";
+        } else {
+          _controllers[i].text = f.options.isNotEmpty ? f.options.first : "";
+        }
+      } else {
+        _controllers[i].clear();
+      }
     }
     _formKey.currentState?.reset();
   }
@@ -252,13 +277,17 @@ List<String> _getProjectTitles() {
       suffixIcon: suffixIcon,
     );
 
+    if (f.type == FieldType.facultyList) {
+      return _buildFacultyField(i);
+    }
+
     if (f.type == FieldType.dropdown) {
       final options =
-    f.label == "Parent Program"
-        ? _getProgramTitles()
-        : f.label == "Parent Project"
-            ? _getProjectTitles()
-            : f.options;
+          f.label == "Parent Program"
+              ? _getProgramTitles()
+              : f.label == "Parent Project"
+                  ? _getProjectTitles()
+                  : f.options;
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: DropdownButtonFormField<String>(
@@ -267,19 +296,17 @@ List<String> _getProjectTitles() {
           style: const TextStyle(color: kTextPrimary),
           icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
           decoration: deco(),
-          
-
-items: options
-    .map(
-      (o) => DropdownMenuItem(
-        value: o,
-        child: Text(
-          o,
-          style: const TextStyle(color: kTextPrimary),
-        ),
-      ),
-    )
-    .toList(),
+          items: options
+              .map(
+                (o) => DropdownMenuItem(
+                  value: o,
+                  child: Text(
+                    o,
+                    style: const TextStyle(color: kTextPrimary),
+                  ),
+                ),
+              )
+              .toList(),
           onChanged: (v) => setState(() => _controllers[i].text = v ?? ''),
           validator: (v) {
             if (f.optional) return null;
@@ -324,79 +351,165 @@ items: options
     );
   }
 
+  Widget _buildFacultyField(int i) {
+    final f = widget.fields[i];
+    final rows = _facultyRows[i]!;
+
+    void syncController() {
+      _controllers[i].text = rows
+          .where((r) => r['name']!.trim().isNotEmpty)
+          .map((r) => r['role']!.trim().isEmpty
+              ? r['name']!.trim()
+              : '${r['name']!.trim()} (${r['role']!.trim()})')
+          .join('; ');
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(f.icon, color: kPrimary, size: 20),
+              const SizedBox(width: 8),
+              Text(f.label,
+                  style: const TextStyle(color: kTextPrimary, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final row in List<Map<String, String>>.from(rows))
+            Padding(
+              key: ValueKey(row['id']),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      initialValue: row['name'],
+                      style: const TextStyle(color: kTextPrimary),
+                      decoration: const InputDecoration(labelText: 'Faculty Name', isDense: true),
+                      onChanged: (v) {
+                        row['name'] = v;
+                        syncController();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      initialValue: row['role'],
+                      style: const TextStyle(color: kTextPrimary),
+                      decoration: const InputDecoration(labelText: 'Role', isDense: true),
+                      onChanged: (v) {
+                        row['role'] = v;
+                        syncController();
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: kMuted),
+                    onPressed: rows.length == 1
+                        ? null
+                        : () => setState(() {
+                              rows.remove(row);
+                              syncController();
+                            }),
+                  ),
+                ],
+              ),
+            ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() {
+                rows.add({'id': (_facultyIdCounter++).toString(), 'name': '', 'role': ''});
+              }),
+              icon: const Icon(Icons.add, color: kPrimary),
+              label: const Text('Add Faculty'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
-Widget build(BuildContext context) {
-  return Form(
-    key: _formKey,
-    child: ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Center(
-          child: Container(
-            width: 76,
-            height: 76,
-            decoration: const BoxDecoration(
-              gradient: kBrandGradient,
-              shape: BoxShape.circle,
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Center(
+            child: Container(
+              width: 76,
+              height: 76,
+              decoration: const BoxDecoration(
+                gradient: kBrandGradient,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                widget.recordLabel == "Program"
+                    ? Icons.event_note
+                    : widget.recordLabel == "Project"
+                        ? Icons.folder
+                        : Icons.bolt,
+                color: kWhite,
+                size: 32,
+              ),
             ),
-            child: Icon(
-              widget.recordLabel == "Program"
-                  ? Icons.event_note
-                  : widget.recordLabel == "Project"
-                      ? Icons.folder
-                      : Icons.bolt,
-              color: kWhite,
-              size: 32,
+          ),
+
+          const SizedBox(height: 18),
+
+          Text(
+            "${widget.recordLabel} Information",
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: kTextPrimary,
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
             ),
           ),
-        ),
-
-        const SizedBox(height: 18),
-
-        Text(
-          "${widget.recordLabel} Information",
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: kTextPrimary,
-            fontSize: 21,
-            fontWeight: FontWeight.w800,
+          const SizedBox(height: 4),
+          Text(
+            "Fields marked required must be completed before saving.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: kTextSecondary, fontSize: 12.5),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "Fields marked required must be completed before saving.",
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: kTextSecondary, fontSize: 12.5),
-        ),
 
-        const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-        for (var i = 0; i < widget.fields.length; i++)
-          _buildField(i),
+          for (var i = 0; i < widget.fields.length; i++)
+            _buildField(i),
 
-        const SizedBox(height: 14),
+          const SizedBox(height: 14),
 
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _submit,
-            icon: const Icon(Icons.save_outlined),
-            label: const Text("Save Record"),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _submit,
+              icon: const Icon(Icons.save_outlined),
+              label: const Text("Save Record"),
+            ),
           ),
-        ),
 
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
 
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _clear,
-            icon: const Icon(Icons.refresh),
-            label: const Text("Clear Form"),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _clear,
+              icon: const Icon(Icons.refresh),
+              label: const Text("Clear Form"),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }
