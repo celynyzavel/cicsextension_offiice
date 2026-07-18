@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common_widgets.dart';
 import '../models/user_role.dart';
+import '../services/auth_service.dart';
 import 'landing_page.dart';
 import 'dashboard_page.dart';
 class LoginPage extends StatefulWidget {
@@ -44,44 +45,48 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _loading = true);
 
-    await Future.delayed(const Duration(milliseconds: 700));
-
-    if (!mounted) return;
-
-    final account = findDemoAccount(_role!);
-    final matches = account != null &&
-        account.email.toLowerCase() == _email.text.trim().toLowerCase() &&
-        account.password == _password.text;
-
-    setState(() => _loading = false);
-
-    if (!matches) {
-      showSnack(
-        context,
-        "Invalid email or password for the selected role. Check the demo accounts below.",
+    try {
+      final matches = await AuthService.login(
+        role: _role!,
+        email: _email.text,
+        password: _password.text,
       );
-      return;
+
+      if (!mounted) return;
+      setState(() => _loading = false);
+
+      if (!matches) {
+        showSnack(
+          context,
+          "Invalid email or password for the selected role.",
+        );
+        return;
+      }
+
+      showSnack(context, "Login successful!", success: true);
+
+      Widget destination;
+      switch (_role!) {
+        case UserRole.facultyExtensionist:
+          destination = const LandingPage(role: UserRole.facultyExtensionist);
+          break;
+        case UserRole.extensionCoordinator:
+          destination = const LandingPage(role: UserRole.extensionCoordinator);
+          break;
+        case UserRole.collegeDean:
+          destination = const DashboardPage();
+          break;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      showSnack(context, "Something went wrong. Please try again.");
     }
-
-    showSnack(context, "Login successful!");
-
-    Widget destination;
-    switch (_role!) {
-      case UserRole.facultyExtensionist:
-        destination = const LandingPage(role: UserRole.facultyExtensionist);
-        break;
-      case UserRole.extensionCoordinator:
-        destination = const LandingPage(role: UserRole.extensionCoordinator);
-        break;
-      case UserRole.collegeDean:
-        destination = const DashboardPage();
-        break;
-    }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => destination),
-    );
   }
 
   InputDecoration _fieldDecoration({
@@ -337,63 +342,6 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                 )
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: kCard,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: kCardBorder),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Demo Accounts",
-                                  style: TextStyle(
-                                    color: kTextPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                for (final account in demoAccounts) ...[
-                                  Text(
-                                    account.role.label,
-                                    style: const TextStyle(
-                                      color: kGold,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Email: ${account.email}",
-                                    style: const TextStyle(
-                                      color: kTextSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Password: ${account.password}",
-                                    style: const TextStyle(
-                                      color: kTextSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  if (account != demoAccounts.last)
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 12),
-                                      child: Divider(color: kCardBorder, height: 1),
-                                    ),
-                                ],
                               ],
                             ),
                           ),
