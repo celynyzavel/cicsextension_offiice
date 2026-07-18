@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum FieldType { text, number, multiline, date, dropdown, facultyList }
+enum FieldType { text, number, multiline, date, dropdown, facultyList, readonly }
 
 class FieldSpec {
   final String label;
@@ -36,7 +36,8 @@ const programFields = [
 
 const projectFields = [
   FieldSpec('Project Title', Icons.volunteer_activism_outlined),
-  FieldSpec('Parent Program', Icons.folder_open_outlined, type: FieldType.dropdown,),
+  FieldSpec('Parent Program', Icons.folder_open_outlined, type: FieldType.dropdown),
+  FieldSpec('Parent Program ID', Icons.tag_outlined, type: FieldType.readonly, optional: true),
   FieldSpec('Start Date', Icons.calendar_today_outlined, type: FieldType.date),
   FieldSpec('End Date', Icons.event_available_outlined, type: FieldType.date),
   FieldSpec('Status', Icons.flag_outlined,
@@ -48,6 +49,7 @@ const projectFields = [
 
 const activityFields = [
   FieldSpec('Parent Project', Icons.folder_open_outlined, type: FieldType.dropdown),
+  FieldSpec('Parent Project ID', Icons.tag_outlined, type: FieldType.readonly, optional: true),
   FieldSpec('Activity Title', Icons.bolt_outlined),
   FieldSpec('Date', Icons.calendar_today_outlined, type: FieldType.date, optional: true),
   FieldSpec('Location', Icons.location_on_outlined, optional: true),
