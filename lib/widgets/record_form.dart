@@ -15,10 +15,21 @@ class RecordForm extends StatefulWidget {
 
 class _RecordFormState extends State<RecordForm> {
   final _formKey = GlobalKey<FormState>();
-  late final List<TextEditingController> _controllers = widget.fields
-      .map((f) => TextEditingController(
-          text: f.type == FieldType.dropdown && f.options.isNotEmpty ? f.options.first : ''))
-      .toList();
+
+  late final List<TextEditingController> _controllers = widget.fields.map((f) {
+    if (f.type == FieldType.dropdown) {
+      if (f.label == "Parent Program") {
+        final titles = _getProgramTitles();
+        return TextEditingController(text: titles.isNotEmpty ? titles.first : '');
+      } else if (f.label == "Parent Project") {
+        final titles = _getProjectTitles();
+        return TextEditingController(text: titles.isNotEmpty ? titles.first : '');
+      } else {
+        return TextEditingController(text: f.options.isNotEmpty ? f.options.first : '');
+      }
+    }
+    return TextEditingController();
+  }).toList();
 
   // Rows for any facultyList fields: index -> list of {id, name, role}
   final Map<int, List<Map<String, String>>> _facultyRows = {};
@@ -34,7 +45,22 @@ class _RecordFormState extends State<RecordForm> {
         ];
       }
     }
+
+    // Now that every controller exists, populate the read-only ID
+    // fields based on whatever the parent dropdowns start out as.
+    for (int i = 0; i < widget.fields.length; i++) {
+      final f = widget.fields[i];
+      if (f.type == FieldType.dropdown) {
+        if (f.label == "Parent Program") {
+          _syncIdField("Parent Program ID", _idForProgramTitle(_controllers[i].text));
+        } else if (f.label == "Parent Project") {
+          _syncIdField("Parent Project ID", _idForProjectTitle(_controllers[i].text));
+        }
+      }
+    }
   }
+
+  // ---- Name lists for the parent dropdowns (what the user sees/picks) ----
 
   List<String> _getProgramTitles() {
     return RecordStorage.programs
@@ -44,14 +70,40 @@ class _RecordFormState extends State<RecordForm> {
 
   List<String> _getProjectTitles() {
     List<String> projects = [];
-
     for (final program in RecordStorage.programs) {
       for (final project in program.projects) {
         projects.add(project.data["Project Title"] as String);
       }
     }
-
     return projects;
+  }
+
+  // ---- Name -> auto-generated ID lookups, used to populate the
+  // read-only "Parent Program ID" / "Parent Project ID" fields ----
+
+  String? _idForProgramTitle(String title) {
+    for (final p in RecordStorage.programs) {
+      if (p.data["Program Title"] == title) return p.id;
+    }
+    return null;
+  }
+
+  String? _idForProjectTitle(String title) {
+    for (final program in RecordStorage.programs) {
+      for (final project in program.projects) {
+        if (project.data["Project Title"] == title) return project.id;
+      }
+    }
+    return null;
+  }
+
+  /// Writes [value] into the controller for the field labeled [idLabel]
+  /// (e.g. "Parent Program ID"), if that field exists in this form.
+  void _syncIdField(String idLabel, String? value) {
+    final idx = widget.fields.indexWhere((f) => f.label == idLabel);
+    if (idx != -1) {
+      _controllers[idx].text = value ?? '';
+    }
   }
 
   Future<void> _pickDate(int index) async {
@@ -91,6 +143,11 @@ class _RecordFormState extends State<RecordForm> {
   void _clear() {
     for (var i = 0; i < _controllers.length; i++) {
       final f = widget.fields[i];
+
+      // Read-only ID fields are derived from their dropdown — they get
+      // set below when we process that dropdown, so skip them here.
+      if (f.type == FieldType.readonly) continue;
+
       if (f.type == FieldType.facultyList) {
         setState(() {
           _facultyRows[i] = [
@@ -102,11 +159,13 @@ class _RecordFormState extends State<RecordForm> {
       }
       if (f.type == FieldType.dropdown) {
         if (f.label == "Parent Program") {
-          final programs = _getProgramTitles();
-          _controllers[i].text = programs.isNotEmpty ? programs.first : "";
+          final titles = _getProgramTitles();
+          _controllers[i].text = titles.isNotEmpty ? titles.first : "";
+          _syncIdField("Parent Program ID", _idForProgramTitle(_controllers[i].text));
         } else if (f.label == "Parent Project") {
-          final projects = _getProjectTitles();
-          _controllers[i].text = projects.isNotEmpty ? projects.first : "";
+          final titles = _getProjectTitles();
+          _controllers[i].text = titles.isNotEmpty ? titles.first : "";
+          _syncIdField("Parent Project ID", _idForProjectTitle(_controllers[i].text));
         } else {
           _controllers[i].text = f.options.isNotEmpty ? f.options.first : "";
         }
@@ -143,13 +202,15 @@ class _RecordFormState extends State<RecordForm> {
     // SAVE PROJECT
     //============================
     else if (widget.recordLabel == "Project") {
-      String parentProgram =
-          record["Parent Program"] ?? "";
+      // The FK is the auto-filled "Parent Program ID" field, NOT the
+      // "Parent Program" name field — names can repeat or be renamed,
+      // IDs can't.
+      String parentProgramId = record["Parent Program ID"] ?? "";
 
       bool found = false;
 
       for (var program in RecordStorage.programs) {
-        if (program.data["Program Title"] == parentProgram) {
+        if (program.id == parentProgramId) {
           program.projects.add(
             ProjectRecord(record),
           );
@@ -178,14 +239,14 @@ class _RecordFormState extends State<RecordForm> {
     // SAVE ACTIVITY
     //============================
     else if (widget.recordLabel == "Activity") {
-      String parentProject =
-          record["Parent Project"] ?? "";
+      // Same idea: match on the auto-filled "Parent Project ID".
+      String parentProjectId = record["Parent Project ID"] ?? "";
 
       bool found = false;
 
       for (var program in RecordStorage.programs) {
         for (var project in program.projects) {
-          if (project.data["Project Title"] == parentProject) {
+          if (project.id == parentProjectId) {
             project.activities.add(
               ActivityRecord(record),
             );
@@ -194,6 +255,7 @@ class _RecordFormState extends State<RecordForm> {
             break;
           }
         }
+        if (found) break;
       }
 
       // Standalone activity
@@ -281,13 +343,37 @@ class _RecordFormState extends State<RecordForm> {
       return _buildFacultyField(i);
     }
 
+    // Read-only, auto-filled ID fields (Parent Program ID / Parent Project ID)
+    if (f.type == FieldType.readonly) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: TextFormField(
+          controller: _controllers[i],
+          enabled: false,
+          style: const TextStyle(color: kTextSecondary, fontStyle: FontStyle.italic),
+          decoration: InputDecoration(
+            labelText: f.label,
+            hintText: "Auto-filled from selection above",
+            prefixIcon: Icon(f.icon, color: kMuted),
+            filled: true,
+            fillColor: kCard,
+          ),
+        ),
+      );
+    }
+
     if (f.type == FieldType.dropdown) {
-      final options =
-          f.label == "Parent Program"
-              ? _getProgramTitles()
-              : f.label == "Parent Project"
-                  ? _getProjectTitles()
-                  : f.options;
+      final isParentProgram = f.label == "Parent Program";
+      final isParentProject = f.label == "Parent Project";
+
+      final options = isParentProgram
+          ? _getProgramTitles()
+          : isParentProject
+              ? _getProjectTitles()
+              : f.options;
+
+      final hasNoParents = (isParentProgram || isParentProject) && options.isEmpty;
+
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: DropdownButtonFormField<String>(
@@ -295,7 +381,16 @@ class _RecordFormState extends State<RecordForm> {
           dropdownColor: kCard,
           style: const TextStyle(color: kTextPrimary),
           icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
-          decoration: deco(),
+          decoration: deco(
+            suffixIcon: hasNoParents
+                ? Tooltip(
+                    message: isParentProgram
+                        ? "No programs yet — this will be saved as a standalone project"
+                        : "No projects yet — this will be saved as a standalone activity",
+                    child: const Icon(Icons.info_outline, color: kMuted),
+                  )
+                : null,
+          ),
           items: options
               .map(
                 (o) => DropdownMenuItem(
@@ -307,7 +402,14 @@ class _RecordFormState extends State<RecordForm> {
                 ),
               )
               .toList(),
-          onChanged: (v) => setState(() => _controllers[i].text = v ?? ''),
+          onChanged: (v) => setState(() {
+            _controllers[i].text = v ?? '';
+            if (isParentProgram) {
+              _syncIdField("Parent Program ID", _idForProgramTitle(v ?? ''));
+            } else if (isParentProject) {
+              _syncIdField("Parent Project ID", _idForProjectTitle(v ?? ''));
+            }
+          }),
           validator: (v) {
             if (f.optional) return null;
             return (v == null || v.isEmpty) ? '${f.label} must be selected' : null;
