@@ -12,6 +12,7 @@ class FieldSpec {
   final bool allowDecimal;
   final num? min;
   final num? max;
+
   const FieldSpec(
     this.label,
     this.icon, {
@@ -29,84 +30,199 @@ class FieldSpec {
 
 enum RecordType { program, project, activity }
 
-
 const programFields = [
   FieldSpec('Program Title', Icons.event_note_outlined),
-  FieldSpec('Start Date', Icons.calendar_today_outlined, type: FieldType.date),
-  FieldSpec('Location / Community / Barangay', Icons.location_on_outlined),
-  FieldSpec('Status', Icons.flag_outlined,
-      type: FieldType.dropdown, options: ['Running', 'Completed', 'Pending']),
-<<<<<<< HEAD
-  FieldSpec('Partner / Beneficiaries', Icons.groups_outlined),
-=======
-  FieldSpec('Partner / Beneficiaries', Icons.groups_outlined, optional: true),
->>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
+  FieldSpec(
+    'Start Date',
+    Icons.calendar_today_outlined,
+    type: FieldType.date,
+  ),
+  FieldSpec(
+    'Location / Community / Barangay',
+    Icons.location_on_outlined,
+  ),
+  FieldSpec(
+    'Status',
+    Icons.flag_outlined,
+    type: FieldType.dropdown,
+    options: ['Running', 'Completed', 'Pending'],
+  ),
+  FieldSpec(
+    'Partner / Beneficiaries',
+    Icons.groups_outlined,
+    optional: true,
+  ),
 ];
-
 
 const projectFields = [
   FieldSpec('Project Title', Icons.volunteer_activism_outlined),
-  FieldSpec('Parent Program', Icons.folder_open_outlined, type: FieldType.dropdown),
-  FieldSpec('Parent Program ID', Icons.tag_outlined, type: FieldType.readonly, optional: true),
-  FieldSpec('Start Date', Icons.calendar_today_outlined, type: FieldType.date),
-  FieldSpec('End Date', Icons.event_available_outlined, type: FieldType.date),
-  FieldSpec('Status', Icons.flag_outlined,
-      type: FieldType.dropdown, options: ['Running', 'Completed', 'Pending']),
+  FieldSpec(
+    'Parent Program',
+    Icons.folder_open_outlined,
+    type: FieldType.dropdown,
+  ),
+  FieldSpec(
+    'Parent Program ID',
+    Icons.tag_outlined,
+    type: FieldType.readonly,
+    optional: true,
+  ),
+  FieldSpec(
+    'Start Date',
+    Icons.calendar_today_outlined,
+    type: FieldType.date,
+  ),
+  FieldSpec(
+    'End Date',
+    Icons.event_available_outlined,
+    type: FieldType.date,
+  ),
+  FieldSpec(
+    'Status',
+    Icons.flag_outlined,
+    type: FieldType.dropdown,
+    options: ['Running', 'Completed', 'Pending'],
+  ),
   FieldSpec('Beneficiaries', Icons.groups_outlined),
-<<<<<<< HEAD
-  FieldSpec('Lead Implementer', Icons.person_outline),
-=======
-  FieldSpec('Lead Implementer', Icons.person_outline, optional: true),
->>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
+  FieldSpec(
+    'Lead Implementer',
+    Icons.person_outline,
+    optional: true,
+  ),
 ];
-
 
 const activityFields = [
-  FieldSpec('Parent Project', Icons.folder_open_outlined, type: FieldType.dropdown),
-  FieldSpec('Parent Project ID', Icons.tag_outlined, type: FieldType.readonly, optional: true),
+  FieldSpec(
+    'Parent Project',
+    Icons.folder_open_outlined,
+    type: FieldType.dropdown,
+  ),
+  FieldSpec(
+    'Parent Project ID',
+    Icons.tag_outlined,
+    type: FieldType.readonly,
+    optional: true,
+  ),
   FieldSpec('Activity Title', Icons.bolt_outlined),
-<<<<<<< HEAD
-  FieldSpec('Date', Icons.calendar_today_outlined, type: FieldType.date),
-  FieldSpec('Location', Icons.location_on_outlined),
-  FieldSpec('Participants', Icons.groups_outlined, type: FieldType.number, min: 0),
-  FieldSpec('Status', Icons.flag_outlined,
-      type: FieldType.dropdown, options: ['Completed', 'Ongoing', 'Planned']),
-  FieldSpec('Faculty Involved', Icons.people_alt_outlined, type: FieldType.facultyList),
-  FieldSpec('Avg Pre-Test Score (%)', Icons.percent_outlined,
-      type: FieldType.number, allowDecimal: true, min: 0, max: 100),
-  FieldSpec('Avg Post-Test Score (%)', Icons.percent_outlined,
-      type: FieldType.number, allowDecimal: true, min: 0, max: 100),
-  FieldSpec('Number of Pre-Test Takers', Icons.groups_2_outlined,
-      type: FieldType.number, min: 0),
-  FieldSpec('Number of Post-Test Takers', Icons.groups_2_outlined,
-      type: FieldType.number, min: 0),
-  FieldSpec('Satisfaction Rate (1-5)', Icons.thumb_up_alt_outlined,
-      type: FieldType.number, min: 1, max: 5),
-=======
-  FieldSpec('Date', Icons.calendar_today_outlined, type: FieldType.date, optional: true),
-  FieldSpec('Location', Icons.location_on_outlined, optional: true),
-  FieldSpec('Participants', Icons.groups_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Status', Icons.flag_outlined,
-      type: FieldType.dropdown, options: ['Completed', 'Ongoing', 'Planned']),
-  FieldSpec('Faculty Involved', Icons.people_alt_outlined, type: FieldType.facultyList, optional: true),
-  FieldSpec('Avg Pre-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Avg Post-Test Score (%)', Icons.percent_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Number of Pre-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Number of Post-Test Takers', Icons.groups_2_outlined, type: FieldType.number, optional: true),
-  FieldSpec('Satisfaction Rate (%)', Icons.thumb_up_alt_outlined, type: FieldType.number, optional: true),
->>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
-];
 
+  FieldSpec(
+    'Date',
+    Icons.calendar_today_outlined,
+    type: FieldType.date,
+    optional: true,
+  ),
+
+  FieldSpec(
+    'Location',
+    Icons.location_on_outlined,
+    optional: true,
+  ),
+
+  FieldSpec(
+    'Participants',
+    Icons.groups_outlined,
+    type: FieldType.number,
+    optional: true,
+    min: 0,
+  ),
+
+  FieldSpec(
+    'Status',
+    Icons.flag_outlined,
+    type: FieldType.dropdown,
+    options: ['Completed', 'Ongoing', 'Planned'],
+  ),
+
+  FieldSpec(
+    'Faculty Involved',
+    Icons.people_alt_outlined,
+    type: FieldType.facultyList,
+    optional: true,
+  ),
+
+  FieldSpec(
+    'Avg Pre-Test Score (%)',
+    Icons.percent_outlined,
+    type: FieldType.number,
+    allowDecimal: true,
+    optional: true,
+    min: 0,
+    max: 100,
+  ),
+
+  FieldSpec(
+    'Avg Post-Test Score (%)',
+    Icons.percent_outlined,
+    type: FieldType.number,
+    allowDecimal: true,
+    optional: true,
+    min: 0,
+    max: 100,
+  ),
+
+  FieldSpec(
+    'Number of Pre-Test Takers',
+    Icons.groups_2_outlined,
+    type: FieldType.number,
+    optional: true,
+    min: 0,
+  ),
+
+  FieldSpec(
+    'Number of Post-Test Takers',
+    Icons.groups_2_outlined,
+    type: FieldType.number,
+    optional: true,
+    min: 0,
+  ),
+
+  FieldSpec(
+    'Satisfaction Rate (1-5)',
+    Icons.thumb_up_alt_outlined,
+    type: FieldType.number,
+    optional: true,
+    min: 1,
+    max: 5,
+  ),
+];
 
 const technologyTransferFields = [
   FieldSpec('System Name', Icons.devices_other_outlined),
   FieldSpec('Major/Programs', Icons.school_outlined),
-  FieldSpec('Deployment Date', Icons.calendar_today_outlined, type: FieldType.date),
-  FieldSpec('Usage Status', Icons.flag_outlined,
-      type: FieldType.dropdown, options: ['Active', 'Partially Used', 'Not Used']),
-  FieldSpec('Type', Icons.category_outlined,
-      type: FieldType.dropdown, options: ['Software', 'Hardware', 'System/Platform', 'Web Application', 'Mobile Application', 'Other']),
+  FieldSpec(
+    'Deployment Date',
+    Icons.calendar_today_outlined,
+    type: FieldType.date,
+  ),
+  FieldSpec(
+    'Usage Status',
+    Icons.flag_outlined,
+    type: FieldType.dropdown,
+    options: ['Active', 'Partially Used', 'Not Used'],
+  ),
+  FieldSpec(
+    'Type',
+    Icons.category_outlined,
+    type: FieldType.dropdown,
+    options: [
+      'Software',
+      'Hardware',
+      'System/Platform',
+      'Web Application',
+      'Mobile Application',
+      'Other',
+    ],
+  ),
   FieldSpec('Partner Institution', Icons.handshake_outlined),
-  FieldSpec('Users Trained', Icons.groups_outlined, type: FieldType.number),
-  FieldSpec('Description/Notes', Icons.notes_outlined, type: FieldType.multiline, maxLines: 3),
+  FieldSpec(
+    'Users Trained',
+    Icons.groups_outlined,
+    type: FieldType.number,
+  ),
+  FieldSpec(
+    'Description/Notes',
+    Icons.notes_outlined,
+    type: FieldType.multiline,
+    maxLines: 3,
+  ),
 ];

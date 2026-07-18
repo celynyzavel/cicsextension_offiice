@@ -360,13 +360,9 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                     ),
                                                   ),
                                             children: [
-<<<<<<< HEAD
                                               ...activity.data.entries
                                                   .where((e) => e.value.toString().trim().isNotEmpty)
                                                   .map(
-=======
-                                              ...activity.data.entries.map(
->>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
                                                 (entry) => Padding(
                                                   padding: const EdgeInsets.symmetric(
                                                       horizontal: 16, vertical: 6),
@@ -426,7 +422,6 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                     ],
                                                   ),
                                                 ),
-<<<<<<< HEAD
                                               actionButtonRow(
                                                 onUpdate: () => showEditRecordSheet(
                                                   context,
@@ -448,8 +443,6 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                         )
                                                     : null,
                                               ),
-=======
->>>>>>> edd71766970dc99eb81d8f212e0a5fc0a2c72ce8
                                             ],
                                           ),
                                         ),
