@@ -72,33 +72,35 @@ class _DashboardPageState extends State<DashboardPage> {
     return null;
   }
 
-  Widget _tabButton(String label, _DashboardTab tab) {
-    final selected = _tab == tab;
+ Widget _tabButton(String label, _DashboardTab tab) {
+  final selected = _tab == tab;
 
-    return InkWell(
-      onTap: () => setState(() => _tab = tab),
-      borderRadius: BorderRadius.circular(11),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? kCard : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
-          boxShadow: selected ? kCardShadow : null,
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: selected ? kPrimary : kTextSecondary,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-            fontSize: 13,
-          ),
+  return InkWell(
+    onTap: () => setState(() => _tab = tab),
+    borderRadius: BorderRadius.circular(11),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      height: 60, 
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: selected ? kCard : Colors.transparent,
+        borderRadius: BorderRadius.circular(11),
+        boxShadow: selected ? kCardShadow : null,
+      ),
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: selected ? kPrimary : kTextSecondary,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+          fontSize: 13,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _metricCard(String label, String value, {IconData icon = Icons.insights, Color color = kPrimary}) {
     return Container(

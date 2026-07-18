@@ -36,7 +36,6 @@ class EmptyChartState extends StatelessWidget {
   }
 }
 
-/// Simple horizontal bar chart. Keys are ordered labels, values are counts.
 class SimpleBarChart extends StatelessWidget {
   final Map<String, int> data;
   final Color barColor;
@@ -115,8 +114,6 @@ class SimpleBarChart extends StatelessWidget {
   }
 }
 
-/// Simple pie/donut chart with a legend and center total, drawn with
-/// CustomPainter (no dependencies).
 class SimplePieChart extends StatelessWidget {
   final Map<String, int> data;
 

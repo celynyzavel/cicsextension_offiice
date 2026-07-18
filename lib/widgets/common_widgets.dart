@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-/// Standard bordered surface used throughout forms and lists.
+
 Widget cardBox({required Widget child, EdgeInsets? margin}) {
   return Container(
     margin: margin ?? const EdgeInsets.only(bottom: 16),
@@ -15,7 +15,6 @@ Widget cardBox({required Widget child, EdgeInsets? margin}) {
   );
 }
 
-/// Themed snackbar helper — uses SnackBarThemeData set globally.
 void showSnack(BuildContext context, String msg, {bool success = false}) {
   ScaffoldMessenger.of(context).clearSnackBars();
   ScaffoldMessenger.of(context).showSnackBar(
@@ -35,7 +34,7 @@ void showSnack(BuildContext context, String msg, {bool success = false}) {
   );
 }
 
-/// Small uppercase eyebrow/section label used above grouped content.
+
 class SectionLabel extends StatelessWidget {
   final String text;
   final EdgeInsets padding;
@@ -64,7 +63,6 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-/// A rounded, colored badge for statuses like "Ongoing", "Completed", etc.
 class StatusChip extends StatelessWidget {
   final String label;
   const StatusChip(this.label, {super.key});
@@ -87,7 +85,7 @@ class StatusChip extends StatelessWidget {
   }
 }
 
-/// Circular icon badge used as a leading visual for cards, tiles, and headers.
+
 class IconBadge extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -108,7 +106,7 @@ class IconBadge extends StatelessWidget {
   }
 }
 
-/// Consistent empty-state placeholder with icon, message, and optional subtitle.
+
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -149,9 +147,6 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
-
-/// Reusable gradient header banner used across primary screens for a
-/// consistent, institutional look.
 class BrandHeaderBanner extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
