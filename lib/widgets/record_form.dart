@@ -54,6 +54,15 @@ class _RecordFormState extends State<RecordForm> {
     return projects;
   }
 
+  int _indexOfLabel(String label) => widget.fields.indexWhere((f) => f.label == label);
+
+  /// End Date only becomes relevant once the record's Status is "Completed".
+  bool _endDateVisible() {
+    final statusIdx = _indexOfLabel('Status');
+    if (statusIdx == -1) return true;
+    return _controllers[statusIdx].text.trim() == 'Completed';
+  }
+
   Future<void> _pickDate(int index) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -307,13 +316,23 @@ class _RecordFormState extends State<RecordForm> {
                 ),
               )
               .toList(),
-          onChanged: (v) => setState(() => _controllers[i].text = v ?? ''),
+          onChanged: (v) => setState(() {
+            _controllers[i].text = v ?? '';
+            if (f.label == 'Status' && v != 'Completed') {
+              final endIdx = _indexOfLabel('End Date');
+              if (endIdx != -1) _controllers[endIdx].clear();
+            }
+          }),
           validator: (v) {
             if (f.optional) return null;
             return (v == null || v.isEmpty) ? '${f.label} must be selected' : null;
           },
         ),
       );
+    }
+
+    if (f.label == 'End Date' && !_endDateVisible()) {
+      return const SizedBox.shrink();
     }
 
     if (f.type == FieldType.date) {
@@ -326,7 +345,8 @@ class _RecordFormState extends State<RecordForm> {
           onTap: () => _pickDate(i),
           decoration: deco(suffixIcon: const Icon(Icons.calendar_month_outlined, color: kMuted)),
           validator: (v) {
-            if (f.optional) return null;
+            final requiredNow = f.label == 'End Date' ? _endDateVisible() : !f.optional;
+            if (!requiredNow) return null;
             return (v == null || v.trim().isEmpty) ? '${f.label} must not be empty' : null;
           },
         ),
