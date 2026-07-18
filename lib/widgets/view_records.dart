@@ -242,37 +242,68 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                       child: StatusChip(activity.data["Status"] ?? ""),
                                                     ),
                                                   ),
-                                            children: activity.data.entries
-                                                .map(
-                                                  (entry) => Padding(
-                                                    padding: const EdgeInsets.symmetric(
-                                                        horizontal: 16, vertical: 6),
-                                                    child: Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        SizedBox(
-                                                          width: 130,
-                                                          child: Text(
-                                                            entry.key,
-                                                            style: const TextStyle(
-                                                              color: kTextSecondary,
-                                                              fontWeight: FontWeight.w600,
-                                                              fontSize: 13,
-                                                            ),
+                                            children: [
+                                              ...activity.data.entries.map(
+                                                (entry) => Padding(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 16, vertical: 6),
+                                                  child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      SizedBox(
+                                                        width: 130,
+                                                        child: Text(
+                                                          entry.key,
+                                                          style: const TextStyle(
+                                                            color: kTextSecondary,
+                                                            fontWeight: FontWeight.w600,
+                                                            fontSize: 13,
                                                           ),
                                                         ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            entry.value.toString(),
-                                                            style: const TextStyle(
-                                                                color: kTextPrimary, fontSize: 13),
-                                                          ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          entry.value.toString(),
+                                                          style: const TextStyle(
+                                                              color: kTextPrimary, fontSize: 13),
                                                         ),
-                                                      ],
-                                                    ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                )
-                                                .toList(),
+                                                ),
+                                              ),
+                                              if (activity.knowledgeGain != null)
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 16, vertical: 6),
+                                                  child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      const SizedBox(
+                                                        width: 130,
+                                                        child: Text(
+                                                          'Knowledge Gain',
+                                                          style: TextStyle(
+                                                            color: kTextSecondary,
+                                                            fontWeight: FontWeight.w600,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${activity.knowledgeGain!.toStringAsFixed(1)}%',
+                                                          style: const TextStyle(
+                                                            color: kSuccess,
+                                                            fontWeight: FontWeight.w700,
+                                                            fontSize: 13,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
                                       ),
