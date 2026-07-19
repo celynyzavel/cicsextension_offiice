@@ -8,7 +8,7 @@ class FirestoreService {
 
   static Future<DocumentReference<Map<String, dynamic>>> addTechnologyTransfer(
       Map<String, dynamic> data) {
-    return _db.collection('technology_transfers').add(data);
+    return _db.collection('Technology Transfer').add(data);
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamTechnologyTransfers() {
@@ -19,18 +19,18 @@ class FirestoreService {
   }
 
   static Future<void> updateTechnologyTransfer(String docId, Map<String, dynamic> data) {
-    return _db.collection('technology_transfers').doc(docId).update(data);
+    return _db.collection('Technology Transfer').doc(docId).update(data);
   }
 
   static Future<void> deleteTechnologyTransfer(String docId) {
-    return _db.collection('technology_transfers').doc(docId).delete();
+    return _db.collection('Technology Transfer').doc(docId).delete();
   }
 
   // ---------------- Programs ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addProgram(
       Map<String, dynamic> data) {
-    return _db.collection('programs').add(data);
+    return _db.collection('Programs').add(data);
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamPrograms() {
@@ -41,18 +41,18 @@ class FirestoreService {
   }
 
   static Future<void> updateProgram(String docId, Map<String, dynamic> data) {
-    return _db.collection('programs').doc(docId).update(data);
+    return _db.collection('Programs').doc(docId).update(data);
   }
 
   static Future<void> deleteProgram(String docId) {
-    return _db.collection('programs').doc(docId).delete();
+    return _db.collection('Programs').doc(docId).delete();
   }
 
   // ---------------- Projects ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addProject(
       Map<String, dynamic> data) {
-    return _db.collection('projects').add(data);
+    return _db.collection('Projects').add(data);
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamProjects() {
@@ -63,18 +63,18 @@ class FirestoreService {
   }
 
   static Future<void> updateProject(String docId, Map<String, dynamic> data) {
-    return _db.collection('projects').doc(docId).update(data);
+    return _db.collection('Projects').doc(docId).update(data);
   }
 
   static Future<void> deleteProject(String docId) {
-    return _db.collection('projects').doc(docId).delete();
+    return _db.collection('Projects').doc(docId).delete();
   }
 
   // ---------------- Activities ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addActivity(
       Map<String, dynamic> data) {
-    return _db.collection('activities').add(data);
+    return _db.collection('Activities').add(data);
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamActivities() {
@@ -85,11 +85,11 @@ class FirestoreService {
   }
 
   static Future<void> updateActivity(String docId, Map<String, dynamic> data) {
-    return _db.collection('activities').doc(docId).update(data);
+    return _db.collection('Activities').doc(docId).update(data);
   }
 
   static Future<void> deleteActivity(String docId) {
-    return _db.collection('activities').doc(docId).delete();
+    return _db.collection('Activities').doc(docId).delete();
   }
 
   static List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortedByCreatedAt(
@@ -109,14 +109,14 @@ class FirestoreService {
     RecordStorage.clearAll();
 
     // ---- Technology Transfers ----
-    final techSnap = await _db.collection('technology_transfers').get();
+    final techSnap = await _db.collection('Technology Transfer').get();
     for (final doc in _sortedByCreatedAt(techSnap.docs)) {
       final data = Map<String, dynamic>.from(doc.data());
       RecordStorage.techTransfers.add(TechTransferRecord(data, docId: doc.id));
     }
 
     // ---- Programs ----
-    final programSnap = await _db.collection('programs').get();
+    final programSnap = await _db.collection('Programs').get();
     for (final doc in _sortedByCreatedAt(programSnap.docs)) {
       final data = Map<String, dynamic>.from(doc.data());
       final id = (data['Program ID'] as String?) ?? doc.id;
@@ -125,7 +125,7 @@ class FirestoreService {
     }
 
 
-    final projectSnap = await _db.collection('projects').get();
+    final projectSnap = await _db.collection('Projects').get();
     final orphanProjects = <ProjectRecord>[];
     for (final doc in _sortedByCreatedAt(projectSnap.docs)) {
       final data = Map<String, dynamic>.from(doc.data());
@@ -157,7 +157,7 @@ class FirestoreService {
     }
 
     // ---- Activities (re-attach to their parent project by stored ID) ----
-    final activitySnap = await _db.collection('activities').get();
+    final activitySnap = await _db.collection('Activities').get();
     final orphanActivities = <ActivityRecord>[];
     for (final doc in _sortedByCreatedAt(activitySnap.docs)) {
       final data = Map<String, dynamic>.from(doc.data());

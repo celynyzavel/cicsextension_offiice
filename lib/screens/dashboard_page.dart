@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/records.dart';
+import '../services/firestore_services.dart';
 import '../widgets/dashboard_charts.dart';
 import '../widgets/common_widgets.dart';
 import 'login_page.dart';
@@ -17,6 +18,36 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   _DashboardTab _tab = _DashboardTab.training;
   String? _type;
+  bool _refreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-sync with Firestore every time the dashboard opens, so newly
+    // added records (including ones added directly in the Firebase
+    // console) are reflected without needing to restart the app.
+    _refresh(showSnackOnSuccess: false);
+  }
+
+  Future<void> _refresh({bool showSnackOnSuccess = true}) async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      await FirestoreService.loadAllRecordsIntoStorage();
+      if (mounted) {
+        setState(() {});
+        if (showSnackOnSuccess) {
+          showSnack(context, "Dashboard refreshed.", success: true);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showSnack(context, "Failed to refresh dashboard: $e", success: false);
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
 
   void _confirmLogout(BuildContext context) {
     showDialog(
@@ -298,6 +329,17 @@ class _DashboardPageState extends State<DashboardPage> {
             : null,
         actions: [
           IconButton(
+            tooltip: "Refresh",
+            onPressed: _refreshing ? null : () => _refresh(),
+            icon: _refreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: kWhite),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
             onPressed: () => _confirmLogout(context),
@@ -308,7 +350,10 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 700),
-            child: SingleChildScrollView(
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -333,6 +378,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   else
                     _buildTechTransferTab(),
                 ],
+              ),
               ),
             ),
           ),

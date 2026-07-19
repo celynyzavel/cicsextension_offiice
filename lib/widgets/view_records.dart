@@ -27,6 +27,37 @@ class ViewRecordsPage extends StatefulWidget {
 }
 
 class _ViewRecordsPageState extends State<ViewRecordsPage> {
+  bool _refreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-sync with Firestore every time this page is opened, so records
+    // added elsewhere (e.g. directly in the Firebase console) show up
+    // without needing to fully restart the app.
+    _refresh(showSnackOnSuccess: false);
+  }
+
+  Future<void> _refresh({bool showSnackOnSuccess = true}) async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      await FirestoreService.loadAllRecordsIntoStorage();
+      if (mounted) {
+        setState(() {});
+        if (showSnackOnSuccess) {
+          showSnack(context, "Records refreshed.", success: true);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showSnack(context, "Failed to refresh records: $e", success: false);
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
   Widget _recordCard({
     required IconData icon,
     required Color accent,
@@ -180,15 +211,41 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
         centerTitle: true,
         backgroundColor: kSidebar,
         foregroundColor: kWhite,
+        actions: [
+          IconButton(
+            tooltip: "Refresh",
+            onPressed: _refreshing ? null : () => _refresh(),
+            icon: _refreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: kWhite),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+        ],
       ),
 
       body: (!hasPrograms && !hasTechTransfers)
-          ? const EmptyState(
-              icon: Icons.folder_off_outlined,
-              title: "No Records Available",
-              subtitle: "Submitted programs, projects, and technology transfers will appear here.",
+          ? RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 120),
+                  EmptyState(
+                    icon: Icons.folder_off_outlined,
+                    title: "No Records Available",
+                    subtitle:
+                        "Submitted programs, projects, and technology transfers will appear here.",
+                  ),
+                ],
+              ),
             )
-          : ListView(
+          : RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
               children: [
                 if (hasTechTransfers) ...[
@@ -584,6 +641,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                   }),
                 ],
               ],
+              ),
             ),
 
       floatingActionButton: canClearAnything
