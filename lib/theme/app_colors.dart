@@ -44,7 +44,7 @@ const kBrandGradient = LinearGradient(
   colors: [kSidebar, kPrimary],
 );
 
-/// Soft elevation shadow reused across cards for a consistent, subtle depth.
+
 List<BoxShadow> get kCardShadow => [
       BoxShadow(
         color: Colors.black.withValues(alpha: 0.05),
@@ -53,7 +53,7 @@ List<BoxShadow> get kCardShadow => [
       ),
     ];
 
-/// Maps common status strings to a semantic color/background pair.
+
 ({Color fg, Color bg}) statusColorFor(String status) {
   final s = status.toLowerCase();
   if (s.contains('complete') || s.contains('active') || s.contains('done') || s.contains('approved')) {

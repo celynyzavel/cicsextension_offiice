@@ -210,9 +210,6 @@ class _RecordFormState extends State<RecordForm> {
       record[f.label] = _controllers[i].text;
     }
 
-    // Generate the human-readable ID up front so it's actually stored in
-    // Firestore (not just added locally afterwards), which lets it survive
-    // an app restart and be used to re-link parent/child records on reload.
     late final String generatedId;
     switch (widget.recordLabel) {
       case "Program":
@@ -259,18 +256,12 @@ class _RecordFormState extends State<RecordForm> {
     setState(() => _isSaving = false);
     if (!mounted) return;
 
-    //============================
-    // SAVE PROGRAM
-    //============================
     if (widget.recordLabel == "Program") {
       RecordStorage.programs.add(
         ProgramRecord(record, id: generatedId, docId: docId),
       );
     }
 
-    //============================
-    // SAVE PROJECT
-    //============================
     else if (widget.recordLabel == "Project") {
       String parentProgramId = record["Parent Program ID"] ?? "";
 
@@ -287,7 +278,6 @@ class _RecordFormState extends State<RecordForm> {
         }
       }
 
-      // Standalone project
       if (!found) {
         ProgramRecord standalone = ProgramRecord({
           "Program Title": "Standalone Projects",
@@ -302,9 +292,7 @@ class _RecordFormState extends State<RecordForm> {
       }
     }
 
-    //============================
-    // SAVE ACTIVITY
-    //============================
+
     else if (widget.recordLabel == "Activity") {
       String parentProjectId = record["Parent Project ID"] ?? "";
 
@@ -324,7 +312,7 @@ class _RecordFormState extends State<RecordForm> {
         if (found) break;
       }
 
-      // Standalone activity
+
       if (!found) {
         ProgramRecord standaloneProgram = ProgramRecord({
           "Program Title": "Standalone Activities",
