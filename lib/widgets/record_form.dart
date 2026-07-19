@@ -36,6 +36,10 @@ class _RecordFormState extends State<RecordForm> {
   final Map<int, List<Map<String, String>>> _facultyRows = {};
   int _facultyIdCounter = 0;
 
+  // Tracks the selected record ID (not title) for the "Parent Program" /
+  // "Parent Project" dropdowns, since titles can collide but IDs cannot.
+  final Map<int, String?> _dropdownSelectedId = {};
+
   bool _submitAttempted = false;
   bool _isSaving = false;
 
@@ -54,9 +58,15 @@ class _RecordFormState extends State<RecordForm> {
       final f = widget.fields[i];
       if (f.type == FieldType.dropdown) {
         if (f.label == "Parent Program") {
-          _syncIdField("Parent Program ID", _idForProgramTitle(_controllers[i].text));
+          final options = _getProgramOptions();
+          final id = options.isNotEmpty ? options.first.key : null;
+          _dropdownSelectedId[i] = id;
+          _syncIdField("Parent Program ID", id);
         } else if (f.label == "Parent Project") {
-          _syncIdField("Parent Project ID", _idForProjectTitle(_controllers[i].text));
+          final options = _getProjectOptions();
+          final id = options.isNotEmpty ? options.first.key : null;
+          _dropdownSelectedId[i] = id;
+          _syncIdField("Parent Project ID", id);
         }
       }
     }
@@ -78,21 +88,26 @@ class _RecordFormState extends State<RecordForm> {
     return projects;
   }
 
-  String? _idForProgramTitle(String title) {
-    for (final p in RecordStorage.programs) {
-      if (p.data["Program Title"] == title) return p.id;
-    }
-    return null;
+  // ID-based option lists for dropdowns. Titles aren't guaranteed unique
+  // (two projects can share the same title), but IDs always are, so these
+  // must be used as the DropdownMenuItem `value` to avoid Flutter's
+  // "exactly one item with this value" assertion.
+  List<MapEntry<String, String>> _getProgramOptions() {
+    return RecordStorage.programs
+        .map((p) => MapEntry(p.id, (p.data["Program Title"] as String?) ?? p.id))
+        .toList();
   }
 
-  String? _idForProjectTitle(String title) {
+  List<MapEntry<String, String>> _getProjectOptions() {
+    final list = <MapEntry<String, String>>[];
     for (final program in RecordStorage.programs) {
       for (final project in program.projects) {
-        if (project.data["Project Title"] == title) return project.id;
+        list.add(MapEntry(project.id, (project.data["Project Title"] as String?) ?? project.id));
       }
     }
-    return null;
+    return list;
   }
+
 
   void _syncIdField(String idLabel, String? value) {
     final idx = widget.fields.indexWhere((f) => f.label == idLabel);
@@ -159,13 +174,17 @@ class _RecordFormState extends State<RecordForm> {
       }
       if (f.type == FieldType.dropdown) {
         if (f.label == "Parent Program") {
-          final titles = _getProgramTitles();
-          _controllers[i].text = titles.isNotEmpty ? titles.first : "";
-          _syncIdField("Parent Program ID", _idForProgramTitle(_controllers[i].text));
+          final options = _getProgramOptions();
+          final id = options.isNotEmpty ? options.first.key : null;
+          _dropdownSelectedId[i] = id;
+          _controllers[i].text = id != null ? options.first.value : "";
+          _syncIdField("Parent Program ID", id);
         } else if (f.label == "Parent Project") {
-          final titles = _getProjectTitles();
-          _controllers[i].text = titles.isNotEmpty ? titles.first : "";
-          _syncIdField("Parent Project ID", _idForProjectTitle(_controllers[i].text));
+          final options = _getProjectOptions();
+          final id = options.isNotEmpty ? options.first.key : null;
+          _dropdownSelectedId[i] = id;
+          _controllers[i].text = id != null ? options.first.value : "";
+          _syncIdField("Parent Project ID", id);
         } else {
           _controllers[i].text = f.options.isNotEmpty ? f.options.first : "";
         }
@@ -429,13 +448,66 @@ class _RecordFormState extends State<RecordForm> {
       final isParentProgram = f.label == "Parent Program";
       final isParentProject = f.label == "Parent Project";
 
-      final options = isParentProgram
-          ? _getProgramTitles()
-          : isParentProject
-              ? _getProjectTitles()
-              : f.options;
+      if (isParentProgram || isParentProject) {
+        final idOptions = isParentProgram ? _getProgramOptions() : _getProjectOptions();
+        final hasNoParents = idOptions.isEmpty;
 
-      final hasNoParents = (isParentProgram || isParentProject) && options.isEmpty;
+        // Only pass a value if it still exists among the current options,
+        // otherwise Flutter's dropdown assertion fails (e.g. after a
+        // refresh removed/renamed the previously selected record).
+        final currentId = _dropdownSelectedId[i];
+        final validCurrentId =
+            idOptions.any((e) => e.key == currentId) ? currentId : null;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: DropdownButtonFormField<String>(
+            initialValue: validCurrentId,
+            dropdownColor: kCard,
+            style: const TextStyle(color: kTextPrimary),
+            icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
+            decoration: deco(
+              suffixIcon: hasNoParents
+                  ? Tooltip(
+                      message: isParentProgram
+                          ? "No programs yet — this will be saved as a standalone project"
+                          : "No projects yet — this will be saved as a standalone activity",
+                      child: const Icon(Icons.info_outline, color: kMuted),
+                    )
+                  : null,
+            ),
+            items: idOptions
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e.key,
+                    child: Text(
+                      e.value,
+                      style: const TextStyle(color: kTextPrimary),
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: (v) => setState(() {
+              _dropdownSelectedId[i] = v;
+              final title = idOptions
+                  .firstWhere((e) => e.key == v, orElse: () => const MapEntry('', ''))
+                  .value;
+              _controllers[i].text = title;
+              if (isParentProgram) {
+                _syncIdField("Parent Program ID", v);
+              } else {
+                _syncIdField("Parent Project ID", v);
+              }
+            }),
+            validator: (v) {
+              if (!requiredNow) return null;
+              return (v == null || v.isEmpty) ? '${f.label} must be selected' : null;
+            },
+          ),
+        );
+      }
+
+      final options = f.options;
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -444,16 +516,7 @@ class _RecordFormState extends State<RecordForm> {
           dropdownColor: kCard,
           style: const TextStyle(color: kTextPrimary),
           icon: const Icon(Icons.arrow_drop_down, color: kPrimary),
-          decoration: deco(
-            suffixIcon: hasNoParents
-                ? Tooltip(
-                    message: isParentProgram
-                        ? "No programs yet — this will be saved as a standalone project"
-                        : "No projects yet — this will be saved as a standalone activity",
-                    child: const Icon(Icons.info_outline, color: kMuted),
-                  )
-                : null,
-          ),
+          decoration: deco(),
           items: options
               .map(
                 (o) => DropdownMenuItem(
@@ -467,11 +530,7 @@ class _RecordFormState extends State<RecordForm> {
               .toList(),
           onChanged: (v) => setState(() {
             _controllers[i].text = v ?? '';
-            if (isParentProgram) {
-              _syncIdField("Parent Program ID", _idForProgramTitle(v ?? ''));
-            } else if (isParentProject) {
-              _syncIdField("Parent Project ID", _idForProjectTitle(v ?? ''));
-            } else if (f.label == "Status" && v != 'Completed') {
+            if (f.label == "Status" && v != 'Completed') {
               final endIdx = _indexOfLabel('End Date');
               if (endIdx != -1) _controllers[endIdx].clear();
             }

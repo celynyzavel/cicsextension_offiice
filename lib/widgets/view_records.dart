@@ -32,9 +32,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
   @override
   void initState() {
     super.initState();
-    // Re-sync with Firestore every time this page is opened, so records
-    // added elsewhere (e.g. directly in the Firebase console) show up
-    // without needing to fully restart the app.
+
     _refresh(showSnackOnSuccess: false);
   }
 
