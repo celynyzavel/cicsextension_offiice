@@ -284,7 +284,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: SimpleBarChart(data: growthData),
         ),
         _sectionCard(
-          title: 'SECTOR DISTRIBUTION',
+          title: 'STATUS BREAKDOWN OF PROGRAMS',
           child: SimplePieChart(data: statusCounts),
         ),
       ],
