@@ -5,7 +5,7 @@ import '../models/user_role.dart';
 class AuthService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  static Future<bool> login({
+  static Future<String?> login({
     required UserRole role,
     required String email,
     required String password,
@@ -18,6 +18,7 @@ class AuthService {
         .limit(1)
         .get();
 
-    return query.docs.isNotEmpty;
+    if (query.docs.isEmpty) return null;
+    return query.docs.first.id;
   }
 }

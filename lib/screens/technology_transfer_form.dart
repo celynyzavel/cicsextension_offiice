@@ -6,6 +6,7 @@ import '../models/form_fields.dart';
 import '../models/records.dart';
 import '../widgets/view_records.dart';
 import '../services/firestore_services.dart';
+import '../services/session.dart';
 
 class TechnologyTransferPage extends StatefulWidget {
   const TechnologyTransferPage({super.key});
@@ -191,6 +192,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
       'type': 'Technology Transfer',
       'dateSaved': DateTime.now().toIso8601String(),
       'createdAt': FieldValue.serverTimestamp(),
+      'Created By': Session.currentUserEmail ?? '',
     };
     for (int i = 0; i < technologyTransferFields.length; i++) {
       record[technologyTransferFields[i].label] = _controllers[i].text.trim();
@@ -212,8 +214,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
     setState(() => _isSaving = false);
     if (!mounted) return;
 
-    // Keep a local copy too, so the UI still works even without a live
-    // Firestore stream wired up on View Records yet.
+
     RecordStorage.techTransfers.add(TechTransferRecord(record, docId: docId));
 
     showDialog(
@@ -249,7 +250,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // close dialog
+              Navigator.pop(context); 
               _clear();
               Navigator.pushReplacement(
                 context,

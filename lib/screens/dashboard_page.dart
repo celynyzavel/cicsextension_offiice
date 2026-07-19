@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/records.dart';
 import '../services/firestore_services.dart';
+import '../services/session.dart';
 import '../widgets/dashboard_charts.dart';
 import '../widgets/common_widgets.dart';
 import 'login_page.dart';
@@ -23,9 +24,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    // Re-sync with Firestore every time the dashboard opens, so newly
-    // added records (including ones added directly in the Firebase
-    // console) are reflected without needing to restart the app.
+
     _refresh(showSnackOnSuccess: false);
   }
 
@@ -64,6 +63,7 @@ class _DashboardPageState extends State<DashboardPage> {
             style: FilledButton.styleFrom(backgroundColor: kDanger, foregroundColor: kWhite),
             onPressed: () {
               Navigator.pop(dialogContext);
+              Session.clear();
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -205,6 +205,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     int totalParticipants = 0;
     final knowledgeGains = <double>[];
+    final satisfactionRates = <double>[];
     final participantsByYear = <int, int>{};
 
     for (final a in activities) {
@@ -222,11 +223,20 @@ class _DashboardPageState extends State<DashboardPage> {
       if (gain != null) {
         knowledgeGains.add(gain);
       }
+
+      final satisfaction = double.tryParse((a.data['Satisfaction Rate (1-5)'] ?? '').toString());
+      if (satisfaction != null) {
+        satisfactionRates.add(satisfaction);
+      }
     }
 
     final avgGain = knowledgeGains.isEmpty
         ? 0.0
         : knowledgeGains.reduce((a, b) => a + b) / knowledgeGains.length;
+
+    final avgSatisfaction = satisfactionRates.isEmpty
+        ? 0.0
+        : satisfactionRates.reduce((a, b) => a + b) / satisfactionRates.length;
 
     final statusCounts = <String, int>{};
     for (final p in programs) {
@@ -245,17 +255,27 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Row(
           children: [
-            Expanded(child: _metricCard('TOTAL PARTICIPANTS', '$totalParticipants', icon: Icons.groups_outlined, color: kPrimary)),
+
+            Expanded(child: _metricCard('TOTAL PROJECTS', '${projects.length}', icon: Icons.folder_outlined, color: kGold)),
             const SizedBox(width: 12),
-            Expanded(child: _metricCard('AVG. KNOWLEDGE GAIN', '${avgGain.toStringAsFixed(1)}%', icon: Icons.trending_up, color: kSuccess)),
+            Expanded(child: _metricCard('TOTAL PARTICIPANTS', '$totalParticipants', icon: Icons.groups_outlined, color: kPrimary)),
+           
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _metricCard('TOTAL PROJECTS', '${projects.length}', icon: Icons.folder_outlined, color: kGold)),
-            const SizedBox(width: 12),
             Expanded(child: _metricCard('TOTAL PROGRAMS', '${programs.length}', icon: Icons.event_note_outlined, color: kSidebar)),
+            const SizedBox(width: 12),
+             Expanded(child: _metricCard('AVG. KNOWLEDGE GAIN', '${avgGain.toStringAsFixed(1)}%', icon: Icons.trending_up, color: kSuccess)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _metricCard('TOTAL ACTIVITIES', '${activities.length}', icon: Icons.bolt_outlined, color: kPrimary)),
+             const SizedBox(width: 12),
+            Expanded(child: _metricCard('AVG. SATISFACTION RATE', '${avgSatisfaction.toStringAsFixed(1)}/5', icon: Icons.thumb_up_alt_outlined, color: kGold)),
           ],
         ),
         const SizedBox(height: 20),
@@ -267,6 +287,70 @@ class _DashboardPageState extends State<DashboardPage> {
           title: 'SECTOR DISTRIBUTION',
           child: SimplePieChart(data: statusCounts),
         ),
+      ],
+    );
+  }
+
+  Map<String, List<String>> _quarterlyFacultyInvolvement() {
+    final map = <String, List<String>>{};
+    for (final p in _allProjects()) {
+      final lead = (p.data['Lead Implementer'] ?? '').toString().trim();
+      if (lead.isEmpty) continue;
+
+      final parts = (p.data['Start Date'] ?? '').toString().split('/');
+      if (parts.length != 3) continue;
+      final month = int.tryParse(parts[0]);
+      final year = int.tryParse(parts[2]);
+      if (month == null || year == null || month < 1 || month > 12) continue;
+
+      final quarter = ((month - 1) ~/ 3) + 1;
+      final key = 'Q$quarter $year';
+      final names = map.putIfAbsent(key, () => []);
+      if (!names.contains(lead)) names.add(lead);
+    }
+    return map;
+  }
+
+  Widget _buildQuarterlyFacultyInvolvement() {
+    final data = _quarterlyFacultyInvolvement();
+    if (data.isEmpty) {
+      return const EmptyChartState(message: 'No quarterly data yet.');
+    }
+
+    final keys = data.keys.toList()
+      ..sort((a, b) {
+        final pa = a.split(' ');
+        final pb = b.split(' ');
+        final yearCompare = int.parse(pa[1]).compareTo(int.parse(pb[1]));
+        if (yearCompare != 0) return yearCompare;
+        return int.parse(pa[0].substring(1)).compareTo(int.parse(pb[0].substring(1)));
+      });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final key in keys)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  key,
+                  style: const TextStyle(
+                    color: kTextPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  data[key]!.join(', '),
+                  style: const TextStyle(color: kTextSecondary, fontSize: 12.5),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -304,7 +388,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         _sectionCard(
           title: 'QUARTERLY FACULTY INVOLVEMENT',
-          child: const EmptyChartState(message: 'No quarterly data yet.'),
+          child: _buildQuarterlyFacultyInvolvement(),
         ),
       ],
     );

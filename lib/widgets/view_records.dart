@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../models/records.dart';
 import '../models/form_fields.dart';
 import '../services/firestore_services.dart';
+import '../services/session.dart';
 import 'common_widgets.dart';
 import 'edit_record_dialog.dart';
 
@@ -32,7 +33,6 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
   @override
   void initState() {
     super.initState();
-
     _refresh(showSnackOnSuccess: false);
   }
 
@@ -54,6 +54,83 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }
+  }
+
+  bool _ownedByCurrentUser(Map<String, dynamic> data) {
+    final userId = Session.currentUserId ?? '';
+    return userId.isNotEmpty && (data['User ID'] ?? '').toString() == userId;
+  }
+
+  List<ActivityRecord> _visibleActivities(ProjectRecord project) {
+    if (widget.scope != ViewRecordsScope.extensionOnly) return project.activities;
+    return project.activities.where((a) => _ownedByCurrentUser(a.data)).toList();
+  }
+
+  List<ProjectRecord> _visibleProjects(ProgramRecord program) {
+    if (widget.scope != ViewRecordsScope.extensionOnly) return program.projects;
+    return program.projects.where((p) => _ownedByCurrentUser(p.data)).toList();
+  }
+
+ 
+  List<ProgramRecord> _visiblePrograms() {
+    if (widget.scope != ViewRecordsScope.extensionOnly) {
+      return RecordStorage.programs;
+    }
+
+    final result = <ProgramRecord>[];
+    ProgramRecord? standaloneProjectsProgram;
+    ProgramRecord? standaloneActivitiesProgram;
+    ProjectRecord? standaloneActivitiesProject;
+
+
+    ProgramRecord ensureStandaloneProjectsProgram() {
+      return standaloneProjectsProgram ??= ProgramRecord(
+        {"Program Title": "My Standalone Projects", "type": "Program"},
+        id: "MY-STANDALONE-PROJECTS",
+      );
+    }
+
+    ProjectRecord ensureStandaloneActivitiesProject() {
+      if (standaloneActivitiesProject == null) {
+        standaloneActivitiesProgram = ProgramRecord(
+          {"Program Title": "My Standalone Activities", "type": "Program"},
+          id: "MY-STANDALONE-ACTIVITIES",
+        );
+        standaloneActivitiesProject = ProjectRecord(
+          {
+            "Project Title": "General Activities",
+            "type": "Project",
+            "User ID": Session.currentUserId ?? '',
+          },
+          id: "MY-STANDALONE-ACTIVITIES-PROJECT",
+        );
+        standaloneActivitiesProgram!.projects.add(standaloneActivitiesProject!);
+      }
+      return standaloneActivitiesProject!;
+    }
+
+    for (final program in RecordStorage.programs) {
+      final programOwned = _ownedByCurrentUser(program.data);
+      if (programOwned) result.add(program);
+
+      for (final project in program.projects) {
+        final projectOwned = _ownedByCurrentUser(project.data);
+        if (projectOwned && !programOwned) {
+          ensureStandaloneProjectsProgram().projects.add(project);
+        }
+        if (!projectOwned) {
+          for (final activity in project.activities) {
+            if (_ownedByCurrentUser(activity.data)) {
+              ensureStandaloneActivitiesProject().activities.add(activity);
+            }
+          }
+        }
+      }
+    }
+
+    if (standaloneProjectsProgram != null) result.add(standaloneProjectsProgram!);
+    if (standaloneActivitiesProgram != null) result.add(standaloneActivitiesProgram!);
+    return result;
   }
 
   Widget _recordCard({
@@ -194,8 +271,9 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
   @override
   Widget build(BuildContext context) {
     final showTechTransfers = widget.scope == ViewRecordsScope.all;
+    final visiblePrograms = _visiblePrograms();
 
-    final hasPrograms = RecordStorage.programs.isNotEmpty;
+    final hasPrograms = visiblePrograms.isNotEmpty;
     final hasTechTransfers = showTechTransfers && RecordStorage.techTransfers.isNotEmpty;
 
     final canClearPrograms = widget.canDeletePrograms && hasPrograms;
@@ -304,7 +382,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
 
                 if (hasPrograms) ...[
                   SectionLabel("Extension Projects"),
-                  ...RecordStorage.programs.map((program) {
+                  ...visiblePrograms.map((program) {
                     return _recordCard(
                       icon: Icons.folder,
                       accent: kPrimary,
@@ -357,7 +435,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                 },
                               )
                           : null,
-                      nested: program.projects.map((project) {
+                      nested: _visibleProjects(program).map((project) {
                         return Padding(
                           padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
                           child: Container(
@@ -471,7 +549,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                             )
                                         : null,
                                   ),
-                                  ...project.activities.map(
+                                  ..._visibleActivities(project).map(
                                     (activity) => Padding(
                                       padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
                                       child: Container(
@@ -677,7 +755,9 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                         onPressed: () {
                           setState(() {
                             if (canClearPrograms) {
-                              RecordStorage.programs.clear();
+                              RecordStorage.programs.removeWhere(
+                                (p) => visiblePrograms.contains(p),
+                              );
                             }
                             if (canClearTechTransfers) {
                               RecordStorage.techTransfers.clear();

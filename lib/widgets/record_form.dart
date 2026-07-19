@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../models/form_fields.dart';
 import '../models/records.dart';
 import '../services/firestore_services.dart';
+import '../services/session.dart';
 import 'common_widgets.dart';
 
 class RecordForm extends StatefulWidget {
@@ -20,12 +21,9 @@ class _RecordFormState extends State<RecordForm> {
 
   late final List<TextEditingController> _controllers = widget.fields.map((f) {
     if (f.type == FieldType.dropdown) {
-      if (f.label == "Parent Program") {
-        final titles = _getProgramTitles();
-        return TextEditingController(text: titles.isNotEmpty ? titles.first : '');
-      } else if (f.label == "Parent Project") {
-        final titles = _getProjectTitles();
-        return TextEditingController(text: titles.isNotEmpty ? titles.first : '');
+      if (f.label == "Parent Program" || f.label == "Parent Project") {
+        // Populated in initState() from the current user's own records.
+        return TextEditingController();
       } else {
         return TextEditingController(text: f.options.isNotEmpty ? f.options.first : '');
       }
@@ -61,47 +59,42 @@ class _RecordFormState extends State<RecordForm> {
           final options = _getProgramOptions();
           final id = options.isNotEmpty ? options.first.key : null;
           _dropdownSelectedId[i] = id;
+          _controllers[i].text = options.isNotEmpty ? options.first.value : '';
           _syncIdField("Parent Program ID", id);
         } else if (f.label == "Parent Project") {
           final options = _getProjectOptions();
           final id = options.isNotEmpty ? options.first.key : null;
           _dropdownSelectedId[i] = id;
+          _controllers[i].text = options.isNotEmpty ? options.first.value : '';
           _syncIdField("Parent Project ID", id);
         }
       }
     }
   }
 
-  List<String> _getProgramTitles() {
-    return RecordStorage.programs
-        .map((p) => p.data["Program Title"] as String)
-        .toList();
-  }
-
-  List<String> _getProjectTitles() {
-    List<String> projects = [];
-    for (final program in RecordStorage.programs) {
-      for (final project in program.projects) {
-        projects.add(project.data["Project Title"] as String);
-      }
-    }
-    return projects;
-  }
 
   // ID-based option lists for dropdowns. Titles aren't guaranteed unique
   // (two projects can share the same title), but IDs always are, so these
   // must be used as the DropdownMenuItem `value` to avoid Flutter's
   // "exactly one item with this value" assertion.
+  //
+  // These are also scoped to records created by the currently logged-in
+  // user, so a faculty member can only attach a new Project/Activity under
+  // a Program/Project they themselves created.
   List<MapEntry<String, String>> _getProgramOptions() {
+    final userId = Session.currentUserId;
     return RecordStorage.programs
+        .where((p) => userId == null || (p.data["User ID"] ?? '') == userId)
         .map((p) => MapEntry(p.id, (p.data["Program Title"] as String?) ?? p.id))
         .toList();
   }
 
   List<MapEntry<String, String>> _getProjectOptions() {
+    final userId = Session.currentUserId;
     final list = <MapEntry<String, String>>[];
     for (final program in RecordStorage.programs) {
       for (final project in program.projects) {
+        if (userId != null && (project.data["User ID"] ?? '') != userId) continue;
         list.add(MapEntry(project.id, (project.data["Project Title"] as String?) ?? project.id));
       }
     }
@@ -217,6 +210,8 @@ class _RecordFormState extends State<RecordForm> {
       "type": widget.recordLabel,
       "dateSaved": DateTime.now().toString(),
       "createdAt": FieldValue.serverTimestamp(),
+      "Created By": Session.currentUserEmail ?? '',
+      "User ID": Session.currentUserId ?? '',
     };
 
     final statusIdx = _indexOfLabel('Status');
@@ -728,6 +723,22 @@ class _RecordFormState extends State<RecordForm> {
           ),
 
           const SizedBox(height: 24),
+
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: TextFormField(
+              initialValue: Session.currentUserId ?? 'Unknown',
+              enabled: false,
+              style: const TextStyle(color: kTextSecondary, fontStyle: FontStyle.italic),
+              decoration: InputDecoration(
+                labelText: "User ID",
+                hintText: "Logged-in user's ID",
+                prefixIcon: const Icon(Icons.badge_outlined, color: kMuted),
+                filled: true,
+                fillColor: kCard,
+              ),
+            ),
+          ),
 
           for (var i = 0; i < widget.fields.length; i++)
             _buildField(i),

@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../widgets/common_widgets.dart';
 import '../models/user_role.dart';
 import '../services/auth_service.dart';
+import '../services/session.dart';
 import 'landing_page.dart';
 import 'dashboard_page.dart';
 class LoginPage extends StatefulWidget {
@@ -46,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
 
     try {
-      final matches = await AuthService.login(
+      final userId = await AuthService.login(
         role: _role!,
         email: _email.text,
         password: _password.text,
@@ -55,13 +56,15 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       setState(() => _loading = false);
 
-      if (!matches) {
+      if (userId == null) {
         showSnack(
           context,
           "Invalid email or password for the selected role.",
         );
         return;
       }
+
+      Session.set(email: _email.text, role: _role!, userId: userId);
 
       showSnack(context, "Login successful!", success: true);
 

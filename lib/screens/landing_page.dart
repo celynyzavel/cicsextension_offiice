@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/view_records.dart';
 import '../models/user_role.dart';
+import '../services/session.dart';
 import 'login_page.dart';
 import 'records_form_page.dart';
 import 'technology_transfer_form.dart';
@@ -42,6 +43,7 @@ class LandingPage extends StatelessWidget {
             style: FilledButton.styleFrom(backgroundColor: kDanger, foregroundColor: kWhite),
             onPressed: () {
               Navigator.pop(dialogContext);
+              Session.clear();
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginPage()),
