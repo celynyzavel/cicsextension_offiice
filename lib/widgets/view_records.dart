@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/records.dart';
 import '../models/form_fields.dart';
+import '../services/firestore_services.dart';
 import 'common_widgets.dart';
 import 'edit_record_dialog.dart';
 
@@ -11,12 +12,14 @@ class ViewRecordsPage extends StatefulWidget {
   final ViewRecordsScope scope;
   final bool canDeletePrograms;
   final bool canDeleteTechTransfers;
+  final bool canUpdatePrograms;
 
   const ViewRecordsPage({
     super.key,
     this.scope = ViewRecordsScope.all,
     this.canDeletePrograms = true,
     this.canDeleteTechTransfers = true,
+    this.canUpdatePrograms = true,
   });
 
   @override
@@ -92,7 +95,7 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                 ),
               ),
             ),
-            if (onUpdate != null) actionButtonRow(onUpdate: onUpdate, onDelete: onDelete),
+            actionButtonRow(onUpdate: onUpdate, onDelete: onDelete),
             if (nested.isNotEmpty) ...[
               const Divider(color: kCardBorder, height: 20, indent: 16, endIndent: 16),
               ...nested,
@@ -103,7 +106,8 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
     );
   }
 
-  Widget actionButtonRow({required VoidCallback onUpdate, VoidCallback? onDelete}) {
+  Widget actionButtonRow({VoidCallback? onUpdate, VoidCallback? onDelete}) {
+    if (onUpdate == null && onDelete == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
       child: Row(
@@ -115,13 +119,14 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
               icon: const Icon(Icons.delete_outline, size: 17, color: kDanger),
               label: const Text("Delete", style: TextStyle(color: kDanger)),
             ),
-            const SizedBox(width: 4),
+            if (onUpdate != null) const SizedBox(width: 4),
           ],
-          TextButton.icon(
-            onPressed: onUpdate,
-            icon: const Icon(Icons.edit_outlined, size: 17),
-            label: const Text("Update"),
-          ),
+          if (onUpdate != null)
+            TextButton.icon(
+              onPressed: onUpdate,
+              icon: const Icon(Icons.edit_outlined, size: 17),
+              label: const Text("Update"),
+            ),
         ],
       ),
     );
@@ -200,7 +205,19 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                         title: "Update Technology Transfer",
                         fields: technologyTransferFields,
                         data: techTransfer.data,
-                        onSave: (updated) => setState(() => techTransfer.data = updated),
+                        onSave: (updated) {
+                          setState(() => techTransfer.data = updated);
+                          showSnack(context, "Information updated successfully.", success: true);
+                          if (techTransfer.docId != null) {
+                            FirestoreService
+                                .updateTechnologyTransfer(techTransfer.docId!, updated)
+                                .catchError((e) {
+                              if (mounted) {
+                                showSnack(context, "Failed to sync update: $e", success: false);
+                              }
+                            });
+                          }
+                        },
                       ),
                       onDelete: widget.canDeleteTechTransfers
                           ? () => _confirmDelete(
@@ -208,9 +225,21 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                 title: "Delete Technology Transfer",
                                 message:
                                     "Are you sure you want to delete \"${techTransfer.data["System Name"] ?? "this record"}\"? This cannot be undone.",
-                                onConfirm: () => setState(
-                                  () => RecordStorage.techTransfers.remove(techTransfer),
-                                ),
+                                onConfirm: () {
+                                  setState(
+                                    () => RecordStorage.techTransfers.remove(techTransfer),
+                                  );
+                                  if (techTransfer.docId != null) {
+                                    FirestoreService
+                                        .deleteTechnologyTransfer(techTransfer.docId!)
+                                        .catchError((e) {
+                                      if (mounted) {
+                                        showSnack(context, "Failed to sync delete: $e",
+                                            success: false);
+                                      }
+                                    });
+                                  }
+                                },
                               )
                           : null,
                     ),
@@ -227,22 +256,50 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                       title: program.data["Program Title"] ?? "Program",
                       subtitle: program.data["Status"] ?? "",
                       entries: program.data.entries.toList(),
-                      onUpdate: () => showEditRecordSheet(
-                        context,
-                        title: "Update Program",
-                        fields: programFields,
-                        data: program.data,
-                        onSave: (updated) => setState(() => program.data = updated),
-                      ),
+                      onUpdate: widget.canUpdatePrograms
+                          ? () => showEditRecordSheet(
+                                context,
+                                title: "Update Program",
+                                fields: programFields,
+                                data: program.data,
+                                onSave: (updated) {
+                                  setState(() => program.data = updated);
+                                  showSnack(context, "Information updated successfully.",
+                                      success: true);
+                                  if (program.docId != null) {
+                                    FirestoreService
+                                        .updateProgram(program.docId!, updated)
+                                        .catchError((e) {
+                                      if (mounted) {
+                                        showSnack(context, "Failed to sync update: $e",
+                                            success: false);
+                                      }
+                                    });
+                                  }
+                                },
+                              )
+                          : null,
                       onDelete: widget.canDeletePrograms
                           ? () => _confirmDelete(
                                 context,
                                 title: "Delete Program",
                                 message:
                                     "Are you sure you want to delete \"${program.data["Program Title"] ?? "this program"}\"? Its projects and activities will be deleted too. This cannot be undone.",
-                                onConfirm: () => setState(
-                                  () => RecordStorage.programs.remove(program),
-                                ),
+                                onConfirm: () {
+                                  setState(
+                                    () => RecordStorage.programs.remove(program),
+                                  );
+                                  if (program.docId != null) {
+                                    FirestoreService
+                                        .deleteProgram(program.docId!)
+                                        .catchError((e) {
+                                      if (mounted) {
+                                        showSnack(context, "Failed to sync delete: $e",
+                                            success: false);
+                                      }
+                                    });
+                                  }
+                                },
                               )
                           : null,
                       nested: program.projects.map((project) {
@@ -308,22 +365,54 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                     ),
                                   ),
                                   actionButtonRow(
-                                    onUpdate: () => showEditRecordSheet(
-                                      context,
-                                      title: "Update Project",
-                                      fields: projectFields,
-                                      data: project.data,
-                                      onSave: (updated) => setState(() => project.data = updated),
-                                    ),
+                                    onUpdate: widget.canUpdatePrograms
+                                        ? () => showEditRecordSheet(
+                                              context,
+                                              title: "Update Project",
+                                              fields: projectFields,
+                                              data: project.data,
+                                              onSave: (updated) {
+                                                setState(() => project.data = updated);
+                                                showSnack(
+                                                    context,
+                                                    "Information updated successfully.",
+                                                    success: true);
+                                                if (project.docId != null) {
+                                                  FirestoreService
+                                                      .updateProject(project.docId!, updated)
+                                                      .catchError((e) {
+                                                    if (mounted) {
+                                                      showSnack(context,
+                                                          "Failed to sync update: $e",
+                                                          success: false);
+                                                    }
+                                                  });
+                                                }
+                                              },
+                                            )
+                                        : null,
                                     onDelete: widget.canDeletePrograms
                                         ? () => _confirmDelete(
                                               context,
                                               title: "Delete Project",
                                               message:
                                                   "Are you sure you want to delete \"${project.data["Project Title"] ?? "this project"}\"? Its activities will be deleted too. This cannot be undone.",
-                                              onConfirm: () => setState(
-                                                () => program.projects.remove(project),
-                                              ),
+                                              onConfirm: () {
+                                                setState(
+                                                  () => program.projects.remove(project),
+                                                );
+                                                if (project.docId != null) {
+                                                  FirestoreService
+                                                      .deleteProject(project.docId!)
+                                                      .catchError((e) {
+                                                    if (mounted) {
+                                                      showSnack(context,
+                                                          "Failed to sync delete: $e",
+                                                          success: false);
+                                                    }
+                                                  });
+                                                }
+                                              },
                                             )
                                         : null,
                                   ),
@@ -423,23 +512,59 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                   ),
                                                 ),
                                               actionButtonRow(
-                                                onUpdate: () => showEditRecordSheet(
-                                                  context,
-                                                  title: "Update Activity",
-                                                  fields: activityFields,
-                                                  data: activity.data,
-                                                  onSave: (updated) =>
-                                                      setState(() => activity.data = updated),
-                                                ),
+                                                onUpdate: widget.canUpdatePrograms
+                                                    ? () => showEditRecordSheet(
+                                                          context,
+                                                          title: "Update Activity",
+                                                          fields: activityFields,
+                                                          data: activity.data,
+                                                          onSave: (updated) {
+                                                            setState(
+                                                                () => activity.data = updated);
+                                                            showSnack(
+                                                                context,
+                                                                "Information updated successfully.",
+                                                                success: true);
+                                                            if (activity.docId != null) {
+                                                              FirestoreService
+                                                                  .updateActivity(
+                                                                      activity.docId!, updated)
+                                                                  .catchError((e) {
+                                                                if (mounted) {
+                                                                  showSnack(context,
+                                                                      "Failed to sync update: $e",
+                                                                      success: false);
+                                                                }
+                                                              });
+                                                            }
+                                                          },
+                                                        )
+                                                    : null,
                                                 onDelete: widget.canDeletePrograms
                                                     ? () => _confirmDelete(
                                                           context,
                                                           title: "Delete Activity",
                                                           message:
                                                               "Are you sure you want to delete \"${activity.data["Activity Title"] ?? "this activity"}\"? This cannot be undone.",
-                                                          onConfirm: () => setState(
-                                                            () => project.activities.remove(activity),
-                                                          ),
+                                                          onConfirm: () {
+                                                            setState(
+                                                              () => project.activities
+                                                                  .remove(activity),
+                                                            );
+                                                            if (activity.docId != null) {
+                                                              FirestoreService
+                                                                  .deleteActivity(
+                                                                      activity.docId!)
+                                                                  .catchError((e) {
+                                                                if (mounted) {
+                                                                  showSnack(
+                                                                      context,
+                                                                      "Failed to sync delete: $e",
+                                                                      success: false);
+                                                                }
+                                                              });
+                                                            }
+                                                          },
                                                         )
                                                     : null,
                                               ),

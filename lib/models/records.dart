@@ -2,8 +2,6 @@ class RecordStorage {
   static List<ProgramRecord> programs = [];
   static List<TechTransferRecord> techTransfers = [];
 
-  // Running counters — these only ever increase, so IDs stay unique
-  // even if records are later removed from the lists.
   static int _programCounter = 0;
   static int _projectCounter = 0;
   static int _activityCounter = 0;
@@ -14,15 +12,42 @@ class RecordStorage {
       'PRJ-${(++_projectCounter).toString().padLeft(4, '0')}';
   static String nextActivityId() =>
       'ACT-${(++_activityCounter).toString().padLeft(4, '0')}';
+
+  static int _numericSuffix(String? id) {
+    if (id == null) return 0;
+    final match = RegExp(r'(\d+)$').firstMatch(id);
+    if (match == null) return 0;
+    return int.tryParse(match.group(1)!) ?? 0;
+  }
+
+  static void ensureCountersAtLeast({
+    String? programId,
+    String? projectId,
+    String? activityId,
+  }) {
+    final p = _numericSuffix(programId);
+    final pr = _numericSuffix(projectId);
+    final a = _numericSuffix(activityId);
+    if (p > _programCounter) _programCounter = p;
+    if (pr > _projectCounter) _projectCounter = pr;
+    if (a > _activityCounter) _activityCounter = a;
+  }
+
+  static void clearAll() {
+    programs.clear();
+    techTransfers.clear();
+  }
 }
 
 class ActivityRecord {
-  /// Auto-generated, e.g. ACT-0001. Never entered manually.
   final String id;
   Map<String, dynamic> data;
 
-  ActivityRecord(this.data) : id = RecordStorage.nextActivityId() {
-    data['Activity ID'] = id;
+  String? docId;
+
+  ActivityRecord(this.data, {String? id, this.docId})
+      : id = id ?? RecordStorage.nextActivityId() {
+    data['Activity ID'] = this.id;
   }
 
   double? get avgPreTestScore =>
@@ -31,7 +56,6 @@ class ActivityRecord {
   double? get avgPostTestScore =>
       double.tryParse((data['Avg Post-Test Score (%)'] ?? '').toString());
 
-  /// Derived — never manually entered.
   double? get knowledgeGain {
     final pre = avgPreTestScore;
     final post = avgPostTestScore;
@@ -41,29 +65,37 @@ class ActivityRecord {
 }
 
 class ProjectRecord {
-  /// Auto-generated, e.g. PRJ-0001. Never entered manually.
+
   final String id;
   Map<String, dynamic> data;
   List<ActivityRecord> activities = [];
 
-  ProjectRecord(this.data) : id = RecordStorage.nextProjectId() {
-    data['Project ID'] = id;
+  String? docId;
+
+  ProjectRecord(this.data, {String? id, this.docId})
+      : id = id ?? RecordStorage.nextProjectId() {
+    data['Project ID'] = this.id;
   }
 }
 
 class ProgramRecord {
-  /// Auto-generated, e.g. PRG-0001. Never entered manually.
+
   final String id;
   Map<String, dynamic> data;
   List<ProjectRecord> projects = [];
 
-  ProgramRecord(this.data) : id = RecordStorage.nextProgramId() {
-    data['Program ID'] = id;
+
+  String? docId;
+
+  ProgramRecord(this.data, {String? id, this.docId})
+      : id = id ?? RecordStorage.nextProgramId() {
+    data['Program ID'] = this.id;
   }
 }
 
 class TechTransferRecord {
   Map<String, dynamic> data;
+  String? docId;
 
-  TechTransferRecord(this.data);
+  TechTransferRecord(this.data, {this.docId});
 }

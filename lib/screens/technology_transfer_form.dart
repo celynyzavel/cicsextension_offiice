@@ -198,8 +198,10 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
 
     setState(() => _isSaving = true);
 
+    String? docId;
     try {
-      await FirestoreService.addTechnologyTransfer(record);
+      final ref = await FirestoreService.addTechnologyTransfer(record);
+      docId = ref.id;
     } catch (e) {
       setState(() => _isSaving = false);
       if (!mounted) return;
@@ -212,7 +214,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
 
     // Keep a local copy too, so the UI still works even without a live
     // Firestore stream wired up on View Records yet.
-    RecordStorage.techTransfers.add(TechTransferRecord(record));
+    RecordStorage.techTransfers.add(TechTransferRecord(record, docId: docId));
 
     showDialog(
       context: context,
@@ -256,6 +258,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
                     scope: ViewRecordsScope.all,
                     canDeletePrograms: false,
                     canDeleteTechTransfers: true,
+                    canUpdatePrograms: false,
                   ),
                 ),
               );

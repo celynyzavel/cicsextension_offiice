@@ -50,7 +50,6 @@ const programFields = [
   FieldSpec(
     'Partner / Beneficiaries',
     Icons.groups_outlined,
-    optional: true,
   ),
 ];
 
@@ -87,7 +86,6 @@ const projectFields = [
   FieldSpec(
     'Lead Implementer',
     Icons.person_outline,
-    optional: true,
   ),
 ];
 
@@ -109,20 +107,17 @@ const activityFields = [
     'Date',
     Icons.calendar_today_outlined,
     type: FieldType.date,
-    optional: true,
   ),
 
   FieldSpec(
     'Location',
     Icons.location_on_outlined,
-    optional: true,
   ),
 
   FieldSpec(
     'Participants',
     Icons.groups_outlined,
     type: FieldType.number,
-    optional: true,
     min: 0,
   ),
 
@@ -137,7 +132,6 @@ const activityFields = [
     'Faculty Involved',
     Icons.people_alt_outlined,
     type: FieldType.facultyList,
-    optional: true,
   ),
 
   FieldSpec(
@@ -145,7 +139,6 @@ const activityFields = [
     Icons.percent_outlined,
     type: FieldType.number,
     allowDecimal: true,
-    optional: true,
     min: 0,
     max: 100,
   ),
@@ -155,7 +148,6 @@ const activityFields = [
     Icons.percent_outlined,
     type: FieldType.number,
     allowDecimal: true,
-    optional: true,
     min: 0,
     max: 100,
   ),
@@ -164,7 +156,6 @@ const activityFields = [
     'Number of Pre-Test Takers',
     Icons.groups_2_outlined,
     type: FieldType.number,
-    optional: true,
     min: 0,
   ),
 
@@ -172,7 +163,6 @@ const activityFields = [
     'Number of Post-Test Takers',
     Icons.groups_2_outlined,
     type: FieldType.number,
-    optional: true,
     min: 0,
   ),
 
@@ -180,7 +170,6 @@ const activityFields = [
     'Satisfaction Rate (1-5)',
     Icons.thumb_up_alt_outlined,
     type: FieldType.number,
-    optional: true,
     min: 1,
     max: 5,
   ),

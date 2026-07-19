@@ -267,6 +267,7 @@ class LandingPage extends StatelessWidget {
                                     scope: isFaculty ? ViewRecordsScope.extensionOnly : ViewRecordsScope.all,
                                     canDeletePrograms: isFaculty,
                                     canDeleteTechTransfers: !isFaculty,
+                                    canUpdatePrograms: isFaculty,
                                   ),
                                 ),
                               );

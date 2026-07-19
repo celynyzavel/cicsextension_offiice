@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 import '../models/form_fields.dart';
 import '../models/records.dart';
+import '../services/firestore_services.dart';
 import 'common_widgets.dart';
 
 class RecordForm extends StatefulWidget {
@@ -35,6 +37,7 @@ class _RecordFormState extends State<RecordForm> {
   int _facultyIdCounter = 0;
 
   bool _submitAttempted = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -180,7 +183,7 @@ class _RecordFormState extends State<RecordForm> {
     return _controllers[i].text.trim().isEmpty;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final formValid = _formKey.currentState!.validate();
     final facultyValid =
         !List.generate(widget.fields.length, (i) => i).any(_facultyMissing);
@@ -194,6 +197,7 @@ class _RecordFormState extends State<RecordForm> {
     Map<String, dynamic> record = {
       "type": widget.recordLabel,
       "dateSaved": DateTime.now().toString(),
+      "createdAt": FieldValue.serverTimestamp(),
     };
 
     final statusIdx = _indexOfLabel('Status');
@@ -206,12 +210,61 @@ class _RecordFormState extends State<RecordForm> {
       record[f.label] = _controllers[i].text;
     }
 
+    // Generate the human-readable ID up front so it's actually stored in
+    // Firestore (not just added locally afterwards), which lets it survive
+    // an app restart and be used to re-link parent/child records on reload.
+    late final String generatedId;
+    switch (widget.recordLabel) {
+      case "Program":
+        generatedId = RecordStorage.nextProgramId();
+        record['Program ID'] = generatedId;
+        break;
+      case "Project":
+        generatedId = RecordStorage.nextProjectId();
+        record['Project ID'] = generatedId;
+        break;
+      case "Activity":
+        generatedId = RecordStorage.nextActivityId();
+        record['Activity ID'] = generatedId;
+        break;
+      default:
+        generatedId = '';
+    }
+
+    setState(() => _isSaving = true);
+
+    String? docId;
+    try {
+      switch (widget.recordLabel) {
+        case "Program":
+          final ref = await FirestoreService.addProgram(record);
+          docId = ref.id;
+          break;
+        case "Project":
+          final ref = await FirestoreService.addProject(record);
+          docId = ref.id;
+          break;
+        case "Activity":
+          final ref = await FirestoreService.addActivity(record);
+          docId = ref.id;
+          break;
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (!mounted) return;
+      showSnack(context, "Failed to save ${widget.recordLabel}: $e", success: false);
+      return;
+    }
+
+    setState(() => _isSaving = false);
+    if (!mounted) return;
+
     //============================
     // SAVE PROGRAM
     //============================
     if (widget.recordLabel == "Program") {
       RecordStorage.programs.add(
-        ProgramRecord(record),
+        ProgramRecord(record, id: generatedId, docId: docId),
       );
     }
 
@@ -226,7 +279,7 @@ class _RecordFormState extends State<RecordForm> {
       for (var program in RecordStorage.programs) {
         if (program.id == parentProgramId) {
           program.projects.add(
-            ProjectRecord(record),
+            ProjectRecord(record, id: generatedId, docId: docId),
           );
 
           found = true;
@@ -242,7 +295,7 @@ class _RecordFormState extends State<RecordForm> {
         });
 
         standalone.projects.add(
-          ProjectRecord(record),
+          ProjectRecord(record, id: generatedId, docId: docId),
         );
 
         RecordStorage.programs.add(standalone);
@@ -261,7 +314,7 @@ class _RecordFormState extends State<RecordForm> {
         for (var project in program.projects) {
           if (project.id == parentProjectId) {
             project.activities.add(
-              ActivityRecord(record),
+              ActivityRecord(record, id: generatedId, docId: docId),
             );
 
             found = true;
@@ -284,7 +337,7 @@ class _RecordFormState extends State<RecordForm> {
         });
 
         standaloneProject.activities.add(
-          ActivityRecord(record),
+          ActivityRecord(record, id: generatedId, docId: docId),
         );
 
         standaloneProgram.projects.add(
@@ -637,9 +690,15 @@ class _RecordFormState extends State<RecordForm> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text("Save Record"),
+              onPressed: _isSaving ? null : _submit,
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: kWhite),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(_isSaving ? "Saving..." : "Save Record"),
             ),
           ),
 
@@ -648,7 +707,7 @@ class _RecordFormState extends State<RecordForm> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: _clear,
+              onPressed: _isSaving ? null : _clear,
               icon: const Icon(Icons.refresh),
               label: const Text("Clear Form"),
             ),
