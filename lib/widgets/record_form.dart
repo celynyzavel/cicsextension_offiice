@@ -33,8 +33,6 @@ class _RecordFormState extends State<RecordForm> {
   final Map<int, List<Map<String, String>>> _facultyRows = {};
   int _facultyIdCounter = 0;
 
-  // Tracks the selected record ID (not title) for the "Parent Program" /
-  // "Parent Project" dropdowns, since titles can collide but IDs cannot.
   final Map<int, String?> _dropdownSelectedId = {};
 
   bool _submitAttempted = false;
@@ -71,15 +69,6 @@ class _RecordFormState extends State<RecordForm> {
     }
   }
 
-
-  // ID-based option lists for dropdowns. Titles aren't guaranteed unique
-  // (two projects can share the same title), but IDs always are, so these
-  // must be used as the DropdownMenuItem `value` to avoid Flutter's
-  // "exactly one item with this value" assertion.
-  //
-  // These are also scoped to records created by the currently logged-in
-  // user, so a faculty member can only attach a new Project/Activity under
-  // a Program/Project they themselves created.
   List<MapEntry<String, String>> _getProgramOptions() {
     final userId = Session.currentUserId;
     return RecordStorage.programs
@@ -442,9 +431,6 @@ class _RecordFormState extends State<RecordForm> {
         final idOptions = isParentProgram ? _getProgramOptions() : _getProjectOptions();
         final hasNoParents = idOptions.isEmpty;
 
-        // Only pass a value if it still exists among the current options,
-        // otherwise Flutter's dropdown assertion fails (e.g. after a
-        // refresh removed/renamed the previously selected record).
         final currentId = _dropdownSelectedId[i];
         final validCurrentId =
             idOptions.any((e) => e.key == currentId) ? currentId : null;

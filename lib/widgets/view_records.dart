@@ -50,16 +50,8 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
     super.dispose();
   }
 
-  // Listens to Firestore in real time so that changes made outside this
-  // session (another device, another user, or directly in the Firestore
-  // console) are pulled back into the app automatically, without the user
-  // needing to tap the manual refresh button.
   void _startLiveSync() {
     void onRemoteChange(_) {
-      // Debounce: a single edit can touch multiple collections (e.g.
-      // deleting a Program cascades to Projects/Activities), and our own
-      // writes will also fire these listeners. Coalesce bursts into one
-      // reload instead of refreshing repeatedly.
       _liveSyncDebounce?.cancel();
       _liveSyncDebounce = Timer(const Duration(milliseconds: 500), () {
         if (mounted && !_refreshing) {

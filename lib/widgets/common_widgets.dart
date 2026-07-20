@@ -34,7 +34,6 @@ void showSnack(BuildContext context, String msg, {bool success = false}) {
   );
 }
 
-
 class SectionLabel extends StatelessWidget {
   final String text;
   final EdgeInsets padding;

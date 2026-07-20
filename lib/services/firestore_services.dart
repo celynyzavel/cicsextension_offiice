@@ -4,7 +4,6 @@ import '../models/records.dart';
 class FirestoreService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // ---------------- Technology Transfer ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addTechnologyTransfer(
       Map<String, dynamic> data, {String? docId}) async {
@@ -22,10 +21,7 @@ class FirestoreService {
   }
 
   static Future<void> updateTechnologyTransfer(String docId, Map<String, dynamic> data) {
-    // Some field labels (e.g. "Major/Programs", "Description/Notes") contain
-    // '/', which Firestore's update() rejects because it treats map keys as
-    // FieldPaths. set(..., merge: true) treats keys as literal field names
-    // instead, so it works regardless of special characters in the label.
+
     return _db.collection('Technology Transfer').doc(docId).set(data, SetOptions(merge: true));
   }
 
@@ -34,7 +30,7 @@ class FirestoreService {
     return _db.collection('Technology Transfer').doc(docId).delete();
   }
 
-  // ---------------- Programs ----------------
+
 
   static Future<DocumentReference<Map<String, dynamic>>> addProgram(
       Map<String, dynamic> data, {String? docId}) async {
@@ -52,9 +48,7 @@ class FirestoreService {
   }
 
   static Future<void> updateProgram(String docId, Map<String, dynamic> data) {
-    // See note in updateTechnologyTransfer: labels like
-    // "Location / Community / Barangay" and "Partner / Beneficiaries"
-    // contain '/', which update() rejects. merge-set avoids that.
+
     return _db.collection('Programs').doc(docId).set(data, SetOptions(merge: true));
   }
 
@@ -62,7 +56,6 @@ class FirestoreService {
     return _db.collection('Programs').doc(docId).delete();
   }
 
-  // ---------------- Projects ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addProject(
       Map<String, dynamic> data, {String? docId}) async {
@@ -87,7 +80,7 @@ class FirestoreService {
     return _db.collection('Projects').doc(docId).delete();
   }
 
-  // ---------------- Activities ----------------
+
 
   static Future<DocumentReference<Map<String, dynamic>>> addActivity(
       Map<String, dynamic> data, {String? docId}) async {
@@ -128,7 +121,6 @@ class FirestoreService {
   static Future<void> loadAllRecordsIntoStorage() async {
     RecordStorage.clearAll();
 
-    // ---- Technology Transfers ----
     final techSnap = await _db.collection('Technology Transfer').get();
     for (final doc in _sortedByCreatedAt(techSnap.docs)) {
       final data = Map<String, dynamic>.from(doc.data());
@@ -137,7 +129,6 @@ class FirestoreService {
       RecordStorage.techTransfers.add(TechTransferRecord(data, id: id, docId: doc.id));
     }
 
-    // ---- Programs ----
     final programSnap = await _db.collection('Programs').get();
     for (final doc in _sortedByCreatedAt(programSnap.docs)) {
       final data = Map<String, dynamic>.from(doc.data());
@@ -178,7 +169,6 @@ class FirestoreService {
       RecordStorage.programs.add(standalone);
     }
 
-    // ---- Activities (re-attach to their parent project by stored ID) ----
     final activitySnap = await _db.collection('Activities').get();
     final orphanActivities = <ActivityRecord>[];
     for (final doc in _sortedByCreatedAt(activitySnap.docs)) {
