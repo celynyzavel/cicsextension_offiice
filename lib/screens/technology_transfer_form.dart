@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common_widgets.dart';
 import '../models/form_fields.dart';
 import '../models/records.dart';
 import '../widgets/view_records.dart';
 import '../services/firestore_services.dart';
-import '../services/session.dart';
 
 class TechnologyTransferPage extends StatefulWidget {
   const TechnologyTransferPage({super.key});
@@ -188,21 +186,19 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
       return;
     }
 
-    final record = <String, dynamic>{
-      'type': 'Technology Transfer',
-      'dateSaved': DateTime.now().toIso8601String(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'Created By': Session.currentUserEmail ?? '',
-    };
+    final record = <String, dynamic>{};
     for (int i = 0; i < technologyTransferFields.length; i++) {
       record[technologyTransferFields[i].label] = _controllers[i].text.trim();
     }
+
+    final generatedId = RecordStorage.nextTechTransferId();
+    record['Technology Transfer ID'] = generatedId;
 
     setState(() => _isSaving = true);
 
     String? docId;
     try {
-      final ref = await FirestoreService.addTechnologyTransfer(record);
+      final ref = await FirestoreService.addTechnologyTransfer(record, docId: generatedId);
       docId = ref.id;
     } catch (e) {
       setState(() => _isSaving = false);
@@ -215,7 +211,7 @@ class _TechnologyTransferFormState extends State<TechnologyTransferForm> {
     if (!mounted) return;
 
 
-    RecordStorage.techTransfers.add(TechTransferRecord(record, docId: docId));
+    RecordStorage.techTransfers.add(TechTransferRecord(record, id: generatedId, docId: docId));
 
     showDialog(
       context: context,

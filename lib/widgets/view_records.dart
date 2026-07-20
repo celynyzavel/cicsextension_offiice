@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/records.dart';
@@ -29,11 +31,49 @@ class ViewRecordsPage extends StatefulWidget {
 
 class _ViewRecordsPageState extends State<ViewRecordsPage> {
   bool _refreshing = false;
+  final List<StreamSubscription> _liveSyncSubs = [];
+  Timer? _liveSyncDebounce;
 
   @override
   void initState() {
     super.initState();
     _refresh(showSnackOnSuccess: false);
+    _startLiveSync();
+  }
+
+  @override
+  void dispose() {
+    _liveSyncDebounce?.cancel();
+    for (final sub in _liveSyncSubs) {
+      sub.cancel();
+    }
+    super.dispose();
+  }
+
+  // Listens to Firestore in real time so that changes made outside this
+  // session (another device, another user, or directly in the Firestore
+  // console) are pulled back into the app automatically, without the user
+  // needing to tap the manual refresh button.
+  void _startLiveSync() {
+    void onRemoteChange(_) {
+      // Debounce: a single edit can touch multiple collections (e.g.
+      // deleting a Program cascades to Projects/Activities), and our own
+      // writes will also fire these listeners. Coalesce bursts into one
+      // reload instead of refreshing repeatedly.
+      _liveSyncDebounce?.cancel();
+      _liveSyncDebounce = Timer(const Duration(milliseconds: 500), () {
+        if (mounted && !_refreshing) {
+          _refresh(showSnackOnSuccess: false);
+        }
+      });
+    }
+
+    _liveSyncSubs.addAll([
+      FirestoreService.streamTechnologyTransfers().listen(onRemoteChange),
+      FirestoreService.streamPrograms().listen(onRemoteChange),
+      FirestoreService.streamProjects().listen(onRemoteChange),
+      FirestoreService.streamActivities().listen(onRemoteChange),
+    ]);
   }
 
   Future<void> _refresh({bool showSnackOnSuccess = true}) async {
@@ -174,7 +214,10 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                 ),
           childrenPadding: const EdgeInsets.only(bottom: 8),
           children: [
-            ...entries.where((e) => e.value.toString().trim().isNotEmpty).map(
+            ...entries
+                .where((e) => e.value.toString().trim().isNotEmpty)
+                .where((e) => !const {'createdAt', 'User ID'}.contains(e.key))
+                .map(
               (entry) => Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Row(
@@ -365,12 +408,20 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                   if (techTransfer.docId != null) {
                                     FirestoreService
                                         .deleteTechnologyTransfer(techTransfer.docId!)
-                                        .catchError((e) {
+                                        .then((_) {
+                                      if (mounted) {
+                                        showSnack(context, "Record deleted successfully.",
+                                            success: true);
+                                      }
+                                    }).catchError((e) {
                                       if (mounted) {
                                         showSnack(context, "Failed to sync delete: $e",
                                             success: false);
                                       }
                                     });
+                                  } else {
+                                    showSnack(context, "Record deleted successfully.",
+                                        success: true);
                                   }
                                 },
                               )
@@ -425,12 +476,20 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                   if (program.docId != null) {
                                     FirestoreService
                                         .deleteProgram(program.docId!)
-                                        .catchError((e) {
+                                        .then((_) {
+                                      if (mounted) {
+                                        showSnack(context, "Program deleted successfully.",
+                                            success: true);
+                                      }
+                                    }).catchError((e) {
                                       if (mounted) {
                                         showSnack(context, "Failed to sync delete: $e",
                                             success: false);
                                       }
                                     });
+                                  } else {
+                                    showSnack(context, "Program deleted successfully.",
+                                        success: true);
                                   }
                                 },
                               )
@@ -537,13 +596,23 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                 if (project.docId != null) {
                                                   FirestoreService
                                                       .deleteProject(project.docId!)
-                                                      .catchError((e) {
+                                                      .then((_) {
+                                                    if (mounted) {
+                                                      showSnack(context,
+                                                          "Project deleted successfully.",
+                                                          success: true);
+                                                    }
+                                                  }).catchError((e) {
                                                     if (mounted) {
                                                       showSnack(context,
                                                           "Failed to sync delete: $e",
                                                           success: false);
                                                     }
                                                   });
+                                                } else {
+                                                  showSnack(context,
+                                                      "Project deleted successfully.",
+                                                      success: true);
                                                 }
                                               },
                                             )
@@ -688,14 +757,24 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                                                               FirestoreService
                                                                   .deleteActivity(
                                                                       activity.docId!)
-                                                                  .catchError((e) {
+                                                                  .then((_) {
                                                                 if (mounted) {
                                                                   showSnack(
                                                                       context,
+                                                                      "Activity deleted successfully.",
+                                                                      success: true);
+                                                                }
+                                                              }).catchError((e) {
+                                                                if (mounted) {
+                                                                  showSnack(context,
                                                                       "Failed to sync delete: $e",
                                                                       success: false);
                                                                 }
                                                               });
+                                                            } else {
+                                                              showSnack(context,
+                                                                  "Activity deleted successfully.",
+                                                                  success: true);
                                                             }
                                                           },
                                                         )
@@ -752,11 +831,20 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                           backgroundColor: kDanger,
                           foregroundColor: kWhite,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
+                          Navigator.pop(context);
+
+                          final programsToDelete = canClearPrograms
+                              ? visiblePrograms.toList()
+                              : <ProgramRecord>[];
+                          final techTransfersToDelete = canClearTechTransfers
+                              ? List<TechTransferRecord>.from(RecordStorage.techTransfers)
+                              : <TechTransferRecord>[];
+
                           setState(() {
                             if (canClearPrograms) {
                               RecordStorage.programs.removeWhere(
-                                (p) => visiblePrograms.contains(p),
+                                (p) => programsToDelete.contains(p),
                               );
                             }
                             if (canClearTechTransfers) {
@@ -764,7 +852,38 @@ class _ViewRecordsPageState extends State<ViewRecordsPage> {
                             }
                           });
 
-                          Navigator.pop(context);
+                          try {
+                            for (final program in programsToDelete) {
+                              for (final project in program.projects) {
+                                for (final activity in project.activities) {
+                                  if (activity.docId != null) {
+                                    await FirestoreService.deleteActivity(activity.docId!);
+                                  }
+                                }
+                                if (project.docId != null) {
+                                  await FirestoreService.deleteProject(project.docId!);
+                                }
+                              }
+                              if (program.docId != null) {
+                                await FirestoreService.deleteProgram(program.docId!);
+                              }
+                            }
+                            for (final techTransfer in techTransfersToDelete) {
+                              if (techTransfer.docId != null) {
+                                await FirestoreService
+                                    .deleteTechnologyTransfer(techTransfer.docId!);
+                              }
+                            }
+                            if (mounted) {
+                              showSnack(context, "Records deleted successfully.",
+                                  success: true);
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              showSnack(context, "Failed to sync delete: $e",
+                                  success: false);
+                            }
+                          }
                         },
                         child: const Text("Delete"),
                       ),

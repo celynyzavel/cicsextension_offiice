@@ -7,20 +7,28 @@ class FirestoreService {
   // ---------------- Technology Transfer ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addTechnologyTransfer(
-      Map<String, dynamic> data) {
-    return _db.collection('Technology Transfer').add(data);
+      Map<String, dynamic> data, {String? docId}) async {
+    final ref = docId != null
+        ? _db.collection('Technology Transfer').doc(docId)
+        : _db.collection('Technology Transfer').doc();
+    await ref.set(data);
+    return ref;
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamTechnologyTransfers() {
     return _db
-        .collection('technology_transfers')
-        .orderBy('createdAt', descending: true)
+        .collection('Technology Transfer')
         .snapshots();
   }
 
   static Future<void> updateTechnologyTransfer(String docId, Map<String, dynamic> data) {
-    return _db.collection('Technology Transfer').doc(docId).update(data);
+    // Some field labels (e.g. "Major/Programs", "Description/Notes") contain
+    // '/', which Firestore's update() rejects because it treats map keys as
+    // FieldPaths. set(..., merge: true) treats keys as literal field names
+    // instead, so it works regardless of special characters in the label.
+    return _db.collection('Technology Transfer').doc(docId).set(data, SetOptions(merge: true));
   }
+
 
   static Future<void> deleteTechnologyTransfer(String docId) {
     return _db.collection('Technology Transfer').doc(docId).delete();
@@ -29,19 +37,25 @@ class FirestoreService {
   // ---------------- Programs ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addProgram(
-      Map<String, dynamic> data) {
-    return _db.collection('Programs').add(data);
+      Map<String, dynamic> data, {String? docId}) async {
+    final ref = docId != null
+        ? _db.collection('Programs').doc(docId)
+        : _db.collection('Programs').doc();
+    await ref.set(data);
+    return ref;
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamPrograms() {
     return _db
-        .collection('programs')
-        .orderBy('createdAt', descending: true)
+        .collection('Programs')
         .snapshots();
   }
 
   static Future<void> updateProgram(String docId, Map<String, dynamic> data) {
-    return _db.collection('Programs').doc(docId).update(data);
+    // See note in updateTechnologyTransfer: labels like
+    // "Location / Community / Barangay" and "Partner / Beneficiaries"
+    // contain '/', which update() rejects. merge-set avoids that.
+    return _db.collection('Programs').doc(docId).set(data, SetOptions(merge: true));
   }
 
   static Future<void> deleteProgram(String docId) {
@@ -51,19 +65,22 @@ class FirestoreService {
   // ---------------- Projects ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addProject(
-      Map<String, dynamic> data) {
-    return _db.collection('Projects').add(data);
+      Map<String, dynamic> data, {String? docId}) async {
+    final ref = docId != null
+        ? _db.collection('Projects').doc(docId)
+        : _db.collection('Projects').doc();
+    await ref.set(data);
+    return ref;
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamProjects() {
     return _db
-        .collection('projects')
-        .orderBy('createdAt', descending: true)
+        .collection('Projects')
         .snapshots();
   }
 
   static Future<void> updateProject(String docId, Map<String, dynamic> data) {
-    return _db.collection('Projects').doc(docId).update(data);
+    return _db.collection('Projects').doc(docId).set(data, SetOptions(merge: true));
   }
 
   static Future<void> deleteProject(String docId) {
@@ -73,19 +90,22 @@ class FirestoreService {
   // ---------------- Activities ----------------
 
   static Future<DocumentReference<Map<String, dynamic>>> addActivity(
-      Map<String, dynamic> data) {
-    return _db.collection('Activities').add(data);
+      Map<String, dynamic> data, {String? docId}) async {
+    final ref = docId != null
+        ? _db.collection('Activities').doc(docId)
+        : _db.collection('Activities').doc();
+    await ref.set(data);
+    return ref;
   }
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamActivities() {
     return _db
-        .collection('activities')
-        .orderBy('createdAt', descending: true)
+        .collection('Activities')
         .snapshots();
   }
 
   static Future<void> updateActivity(String docId, Map<String, dynamic> data) {
-    return _db.collection('Activities').doc(docId).update(data);
+    return _db.collection('Activities').doc(docId).set(data, SetOptions(merge: true));
   }
 
   static Future<void> deleteActivity(String docId) {
@@ -112,7 +132,9 @@ class FirestoreService {
     final techSnap = await _db.collection('Technology Transfer').get();
     for (final doc in _sortedByCreatedAt(techSnap.docs)) {
       final data = Map<String, dynamic>.from(doc.data());
-      RecordStorage.techTransfers.add(TechTransferRecord(data, docId: doc.id));
+      final id = (data['Technology Transfer ID'] as String?) ?? doc.id;
+      RecordStorage.ensureCountersAtLeast(techTransferId: id);
+      RecordStorage.techTransfers.add(TechTransferRecord(data, id: id, docId: doc.id));
     }
 
     // ---- Programs ----
@@ -197,4 +219,3 @@ class FirestoreService {
     }
   }
 }
-

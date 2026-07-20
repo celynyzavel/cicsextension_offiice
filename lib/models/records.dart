@@ -5,13 +5,16 @@ class RecordStorage {
   static int _programCounter = 0;
   static int _projectCounter = 0;
   static int _activityCounter = 0;
+  static int _techTransferCounter = 0;
 
   static String nextProgramId() =>
-      'PRG-${(++_programCounter).toString().padLeft(4, '0')}';
+      'PRG-${(++_programCounter).toString().padLeft(3, '0')}';
   static String nextProjectId() =>
-      'PRJ-${(++_projectCounter).toString().padLeft(4, '0')}';
+      'PRJ-${(++_projectCounter).toString().padLeft(3, '0')}';
   static String nextActivityId() =>
-      'ACT-${(++_activityCounter).toString().padLeft(4, '0')}';
+      'ACT-${(++_activityCounter).toString().padLeft(3, '0')}';
+  static String nextTechTransferId() =>
+      'TT-${(++_techTransferCounter).toString().padLeft(3, '0')}';
 
   static int _numericSuffix(String? id) {
     if (id == null) return 0;
@@ -24,13 +27,16 @@ class RecordStorage {
     String? programId,
     String? projectId,
     String? activityId,
+    String? techTransferId,
   }) {
     final p = _numericSuffix(programId);
     final pr = _numericSuffix(projectId);
     final a = _numericSuffix(activityId);
+    final t = _numericSuffix(techTransferId);
     if (p > _programCounter) _programCounter = p;
     if (pr > _projectCounter) _projectCounter = pr;
     if (a > _activityCounter) _activityCounter = a;
+    if (t > _techTransferCounter) _techTransferCounter = t;
   }
 
   static void clearAll() {
@@ -94,8 +100,12 @@ class ProgramRecord {
 }
 
 class TechTransferRecord {
+  final String id;
   Map<String, dynamic> data;
   String? docId;
 
-  TechTransferRecord(this.data, {this.docId});
+  TechTransferRecord(this.data, {String? id, this.docId})
+      : id = id ?? RecordStorage.nextTechTransferId() {
+    data['Technology Transfer ID'] = this.id;
+  }
 }

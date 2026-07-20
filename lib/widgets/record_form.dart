@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 import '../models/form_fields.dart';
 import '../models/records.dart';
@@ -207,10 +206,6 @@ class _RecordFormState extends State<RecordForm> {
 
     // Save the record
     Map<String, dynamic> record = {
-      "type": widget.recordLabel,
-      "dateSaved": DateTime.now().toString(),
-      "createdAt": FieldValue.serverTimestamp(),
-      "Created By": Session.currentUserEmail ?? '',
       "User ID": Session.currentUserId ?? '',
     };
 
@@ -248,15 +243,15 @@ class _RecordFormState extends State<RecordForm> {
     try {
       switch (widget.recordLabel) {
         case "Program":
-          final ref = await FirestoreService.addProgram(record);
+          final ref = await FirestoreService.addProgram(record, docId: generatedId);
           docId = ref.id;
           break;
         case "Project":
-          final ref = await FirestoreService.addProject(record);
+          final ref = await FirestoreService.addProject(record, docId: generatedId);
           docId = ref.id;
           break;
         case "Activity":
-          final ref = await FirestoreService.addActivity(record);
+          final ref = await FirestoreService.addActivity(record, docId: generatedId);
           docId = ref.id;
           break;
       }
